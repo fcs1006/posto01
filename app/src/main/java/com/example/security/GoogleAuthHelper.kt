@@ -38,7 +38,7 @@ object GoogleAuthHelper {
      * Enquanto vazio, o Credential Manager usa a audiência padrão e o login no
      * Firebase é degradado (e-mail/nome ainda são extraídos do ID token).
      */
-    private const val SERVER_CLIENT_ID = "466576787682-81u7fgs529jjfv70hul57uojgifadkg0.apps.googleusercontent.com"
+    private const val SERVER_CLIENT_ID = "466576787682-r853hbpa551h8qlp662hfl04uqm0pf8f.apps.googleusercontent.com"
 
     suspend fun signInWithGoogle(
         context: Context,
