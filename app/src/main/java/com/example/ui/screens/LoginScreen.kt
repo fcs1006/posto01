@@ -3,9 +3,12 @@ package com.example.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.res.painterResource
+import com.example.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -125,25 +128,14 @@ fun LoginScreen(
         // 1. Brand Logo & Header
         Spacer(modifier = Modifier.height(8.dp))
 
-        Box(
+        Image(
+            painter = painterResource(id = R.drawable.img_auto_posto_logo),
+            contentDescription = "Logo Auto Posto 01",
             modifier = Modifier
-                .size(72.dp)
-                .clip(RoundedCornerShape(22.dp))
-                .background(
-                    Brush.linearGradient(
-                        listOf(EmeraldGradientStart, EmeraldGradientEnd)
-                    )
-                )
-                .border(2.dp, SecondaryGold.copy(alpha = 0.6f), RoundedCornerShape(22.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.LocalGasStation,
-                contentDescription = "Logo Clube 01",
-                tint = OnPrimaryEmerald,
-                modifier = Modifier.size(40.dp)
-            )
-        }
+                .size(110.dp)
+                .clip(CircleShape)
+                .testTag("app_brand_logo")
+        )
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Row(verticalAlignment = Alignment.CenterVertically) {

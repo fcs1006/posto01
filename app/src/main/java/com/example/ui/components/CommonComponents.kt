@@ -3,9 +3,12 @@ package com.example.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.res.painterResource
+import com.example.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -150,26 +153,14 @@ fun AutoPostoTopBar(
                     Spacer(modifier = Modifier.width(10.dp))
                 }
 
-                // Brand Emblem Badge with Luxury Gradient Border
-                Box(
+                // Brand Emblem Badge with Official Auto Posto 01 Logo
+                Image(
+                    painter = painterResource(id = R.drawable.img_auto_posto_logo),
+                    contentDescription = "Logo Auto Posto 01",
                     modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(
-                            Brush.linearGradient(
-                                listOf(EmeraldGradientStart, EmeraldGradientEnd)
-                            )
-                        )
-                        .border(1.5.dp, SecondaryGold.copy(alpha = 0.7f), RoundedCornerShape(14.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LocalGasStation,
-                        contentDescription = "Logo Auto Posto 01",
-                        tint = OnPrimaryEmerald,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
+                        .size(42.dp)
+                        .clip(CircleShape)
+                )
 
                 Spacer(modifier = Modifier.width(10.dp))
 

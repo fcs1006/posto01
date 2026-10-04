@@ -1,8 +1,11 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.res.painterResource
+import com.example.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -224,20 +227,13 @@ fun ClubeScreen(
                         verticalAlignment = Alignment.Top
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
+                            Image(
+                                painter = painterResource(id = R.drawable.img_auto_posto_logo),
+                                contentDescription = "Logo Auto Posto 01",
                                 modifier = Modifier
-                                    .size(42.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(SurfaceContainerHigh),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.LocalGasStation,
-                                    contentDescription = null,
-                                    tint = PrimaryEmerald,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                            )
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
