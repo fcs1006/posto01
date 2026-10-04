@@ -23,12 +23,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.LocalCarWash
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.OilBarrel
+import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Storefront
@@ -42,6 +44,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,6 +60,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.FuelPrice
+import com.example.data.model.PromotionItem
 import com.example.data.model.Station
 import com.example.data.model.UserProfile
 import com.example.ui.theme.EmeraldGradientEnd
@@ -84,13 +88,15 @@ import java.util.Locale
 fun HomeScreen(
     userProfile: UserProfile,
     fuelPrices: List<FuelPrice>,
+    promotions: List<PromotionItem> = emptyList(),
     currentStation: Station?,
     onNavigateToWallet: () -> Unit,
     onNavigateToStations: () -> Unit,
     onNavigateToStore: () -> Unit,
     onNavigateToClube: () -> Unit,
     onOpenCalculator: () -> Unit,
-    onOpenBooking: (String) -> Unit
+    onOpenBooking: (String) -> Unit,
+    onOpenAdminManager: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -100,136 +106,300 @@ fun HomeScreen(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 1. Welcome & VIP Economy Card
+        // 1. Ultra-Modern VIP Economy Bento Hero
         Card(
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
-            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryEmerald.copy(alpha = 0.2f)),
+            border = androidx.compose.foundation.BorderStroke(
+                1.5.dp,
+                Brush.linearGradient(
+                    listOf(
+                        PrimaryEmerald.copy(alpha = 0.5f),
+                        SecondaryGold.copy(alpha = 0.35f),
+                        Color.Transparent
+                    )
+                )
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("vip_economy_card")
         ) {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFF132B1E),
+                                Color(0xFF091710),
+                                SurfaceDark
+                            ),
+                            radius = 900f
+                        )
+                    )
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .clip(CircleShape)
-                                    .background(SecondaryGold),
-                                contentAlignment = Alignment.Center
+                    // Top Row: Greetings & VIP Badge
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(SecondaryGold)
+                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Default.Verified,
+                                            contentDescription = null,
+                                            tint = OnSecondaryGold,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = userProfile.tier.uppercase(),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = OnSecondaryGold,
+                                            fontWeight = FontWeight.Black,
+                                            fontSize = 9.sp,
+                                            letterSpacing = 0.8.sp
+                                        )
+                                    }
+                                }
+
+                                if (userProfile.vehiclePlate.isNotBlank()) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = SurfaceContainerHigh.copy(alpha = 0.8f)
+                                    ) {
+                                        Text(
+                                            text = if (userProfile.vehicleModel.isNotBlank()) "${userProfile.vehiclePlate} • ${userProfile.vehicleModel}" else userProfile.vehiclePlate,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = OnSurfaceVariant,
+                                            fontSize = 10.sp,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Text(
+                                text = if (userProfile.name.isNotBlank()) "Olá, ${userProfile.name}!" else "Olá, Motorista!",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = OnSurface,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = (-0.5).sp
+                            )
+                        }
+
+                        // Right: Live Petros Protocol Pill
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = SurfaceContainerHigh.copy(alpha = 0.6f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryEmerald.copy(alpha = 0.3f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(PrimaryEmerald)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Petros v4.2",
+                                    color = PrimaryEmerald,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        }
+                    }
+
+                    // Bento Metrics Row (Cashback, Points, Savings)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Metric 1: Cashback
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = SurfaceContainerLowest.copy(alpha = 0.8f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SecondaryGold.copy(alpha = 0.2f)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text(
+                                    text = "CASHBACK",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = OnSurfaceVariant,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "R$ ${String.format(Locale.GERMAN, "%.2f", userProfile.cashbackBalance)}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = SecondaryGold,
+                                    fontWeight = FontWeight.Black,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                                Text(
+                                    text = "Disponível",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = SecondaryGold.copy(alpha = 0.8f),
+                                    fontSize = 9.sp
+                                )
+                            }
+                        }
+
+                        // Metric 2: Clube Points
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = SurfaceContainerLowest.copy(alpha = 0.8f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryEmerald.copy(alpha = 0.2f)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text(
+                                    text = "PONTOS CLUBE",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = OnSurfaceVariant,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "${userProfile.pointsBalance} pts",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = PrimaryEmerald,
+                                    fontWeight = FontWeight.Black,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                                Text(
+                                    text = if (userProfile.pointsBalance >= 500) "Ducha liberada" else "${500 - userProfile.pointsBalance} pts p/ Ducha",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = PrimaryEmerald.copy(alpha = 0.8f),
+                                    fontSize = 9.sp
+                                )
+                            }
+                        }
+
+                        // Metric 3: Monthly Savings
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = SurfaceContainerLowest.copy(alpha = 0.8f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, TertiaryGreen.copy(alpha = 0.2f)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text(
+                                    text = "ECONOMIA MÊS",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = OnSurfaceVariant,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "R$ ${String.format(Locale.GERMAN, "%.2f", userProfile.monthlySavings)}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = TertiaryGreen,
+                                    fontWeight = FontWeight.Black,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                                Text(
+                                    text = "No Clube 01",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = TertiaryGreen.copy(alpha = 0.8f),
+                                    fontSize = 9.sp
+                                )
+                            }
+                        }
+                    }
+
+                    // Direct Action CTA Row (Pagar no Bico + QR Code Totem)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Button(
+                            onClick = onNavigateToWallet,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryContainerEmerald),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp)
+                                .testTag("home_abastecer_hero_button")
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Verified,
+                                    imageVector = Icons.Default.LocalGasStation,
                                     contentDescription = null,
-                                    tint = OnSecondaryGold,
-                                    modifier = Modifier.size(14.dp)
+                                    tint = OnPrimaryContainerEmerald,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Abastecer no Bico",
+                                    color = OnPrimaryContainerEmerald,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.ExtraBold
                                 )
                             }
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = userProfile.tier.uppercase(),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = SecondaryGold,
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 1.sp
-                            )
                         }
 
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Text(
-                            text = "Olá, ${userProfile.name}!",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = OnSurface,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-
-                        Text(
-                            text = "Seu desconto exclusivo Clube Auto Posto 01 está ativo",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = OnSurfaceVariant
-                        )
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = SurfaceContainerHigh,
-                        modifier = Modifier.padding(start = 8.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            horizontalAlignment = Alignment.End
+                        OutlinedButton(
+                            onClick = onNavigateToClube,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = SurfaceContainerHigh),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SecondaryGold.copy(alpha = 0.5f)),
+                            modifier = Modifier
+                                .height(50.dp)
+                                .testTag("home_ver_qr_hero_button")
                         ) {
-                            Text(
-                                text = "ECONOMIA NO MÊS",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = OnSurfaceVariant,
-                                fontSize = 9.sp
-                            )
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                Text(
-                                    text = "R$ ",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = PrimaryEmerald,
-                                    fontFamily = FontFamily.Monospace
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.QrCodeScanner,
+                                    contentDescription = null,
+                                    tint = SecondaryGold,
+                                    modifier = Modifier.size(20.dp)
                                 )
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = String.format(Locale.GERMAN, "%.2f", userProfile.monthlySavings),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = PrimaryEmerald,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontFamily = FontFamily.Monospace
+                                    text = "QR Bico",
+                                    color = OnSurface,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
-                    }
-                }
-
-                // Live Benefit Status Pill Bar
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = SurfaceContainerLowest.copy(alpha = 0.8f),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Speed,
-                                contentDescription = null,
-                                tint = PrimaryEmerald,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Próximo cashback em 18L",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = OnSurface
-                            )
-                        }
-                        Text(
-                            text = "Nível Ouro",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = SecondaryGold,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
-                        )
                     }
                 }
             }
@@ -275,7 +445,7 @@ fun HomeScreen(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = currentStation?.name ?: "Unidade 01 - Av. Brasil, 1420",
+                                text = currentStation?.name ?: "Auto Posto 01 • Matriz Clériston Andrade",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = OnSurface,
                                 fontWeight = FontWeight.Bold
@@ -363,16 +533,38 @@ fun HomeScreen(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = SurfaceContainer
+                    shape = RoundedCornerShape(8.dp),
+                    color = SurfaceContainerHigh,
+                    modifier = Modifier
+                        .clickable { onOpenAdminManager() }
+                        .testTag("firestore_admin_badge")
                 ) {
-                    Text(
-                        text = "HOJE • 08:30",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = OnSurfaceVariant,
-                        fontSize = 10.sp,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(PrimaryEmerald)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = "Ao Vivo • Firestore",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = PrimaryEmerald,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Editar Preços",
+                            tint = PrimaryEmerald,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
                 }
             }
 
@@ -459,15 +651,28 @@ fun HomeScreen(
             }
         }
 
-        // 5. Quick Shortcut Cards (3 Pillars)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = "Serviços Rápidos",
-                style = MaterialTheme.typography.titleMedium,
-                color = OnSurface,
-                fontWeight = FontWeight.Bold
-            )
+        // 5. Quick Shortcut Cards (2x2 Modern Bento Grid)
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Serviços & Conveniência",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = OnSurface,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Atendimento VIP",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SecondaryGold,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
+            // Grid Row 1
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -475,7 +680,7 @@ fun HomeScreen(
                 // Shortcut 1: Alcool vs Gasolina
                 QuickShortcutCard(
                     title = "Álcool vs Gasolina",
-                    subtitle = "Calculadora",
+                    subtitle = "Calculadora Flex",
                     icon = Icons.Default.Calculate,
                     iconColor = PrimaryEmerald,
                     modifier = Modifier.weight(1f),
@@ -485,19 +690,35 @@ fun HomeScreen(
                 // Shortcut 2: Troca de Óleo
                 QuickShortcutCard(
                     title = "Troca de Óleo",
-                    subtitle = "Agendar",
+                    subtitle = "Pit Stop Lubrax",
                     icon = Icons.Default.OilBarrel,
                     iconColor = SecondaryGold,
                     modifier = Modifier.weight(1f),
                     onClick = { onOpenBooking("Pit Stop Troca de Óleo") }
                 )
+            }
 
-                // Shortcut 3: Conveniência
+            // Grid Row 2
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Shortcut 3: Ducha Express
+                QuickShortcutCard(
+                    title = "Ducha Express",
+                    subtitle = "Voucher Cortesia",
+                    icon = Icons.Default.LocalCarWash,
+                    iconColor = TertiaryGreen,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onOpenBooking("Ducha Express Gratuita") }
+                )
+
+                // Shortcut 4: Conveniência
                 QuickShortcutCard(
                     title = "Conveniência",
-                    subtitle = "Ofertas",
+                    subtitle = "Loja de Ofertas",
                     icon = Icons.Default.Storefront,
-                    iconColor = TertiaryGreen,
+                    iconColor = PrimaryEmerald,
                     modifier = Modifier.weight(1f),
                     onClick = onNavigateToStore
                 )
@@ -523,166 +744,169 @@ fun HomeScreen(
                 }
             }
 
-            // Promo Card 1: Lavagem Grátis
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceContainerHigh),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onOpenBooking("Ducha Express Gratuita") }
-                    .testTag("promo_ducha_card")
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(SecondaryGold.copy(alpha = 0.15f))
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                text = "PROMOÇÃO 50 LITROS",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = SecondaryGold,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 10.sp
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Ducha Express Gratuita",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = OnSurface,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Abasteça 50L ou mais em uma única compra e ganhe a lavagem de cortesia.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = OnSurfaceVariant,
-                            fontSize = 12.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Resgatar voucher",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = PrimaryEmerald,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
-                                tint = PrimaryEmerald,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Box(
+            // Dynamic Promotions from Firestore
+            val activePromos = promotions.filter { it.isActive }
+            if (activePromos.isNotEmpty()) {
+                activePromos.forEach { promo ->
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = SurfaceContainerHigh),
                         modifier = Modifier
-                            .size(76.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(SurfaceContainerLowest),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .clickable {
+                                when (promo.actionType) {
+                                    "BOOKING" -> onOpenBooking(promo.actionTarget.ifBlank { promo.title })
+                                    "CALCULATOR" -> onOpenCalculator()
+                                    "STORE" -> onNavigateToStore()
+                                    "WALLET" -> onNavigateToWallet()
+                                    else -> onNavigateToWallet()
+                                }
+                            }
+                            .testTag("promo_card_${promo.id}")
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.LocalCarWash,
-                            contentDescription = null,
-                            tint = PrimaryEmerald,
-                            modifier = Modifier.size(38.dp)
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(SecondaryGold.copy(alpha = 0.15f))
+                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                ) {
+                                    Text(
+                                        text = promo.tag,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = SecondaryGold,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = promo.title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = OnSurface,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = promo.subtitle,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = OnSurfaceVariant,
+                                    fontSize = 12.sp
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = promo.buttonText,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = PrimaryEmerald,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = null,
+                                        tint = PrimaryEmerald,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .size(76.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(SurfaceContainerLowest),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = when (promo.iconName) {
+                                        "oil" -> Icons.Default.OilBarrel
+                                        "eco" -> Icons.Default.Eco
+                                        "cashback" -> Icons.Default.Paid
+                                        "store" -> Icons.Default.Storefront
+                                        else -> Icons.Default.LocalCarWash
+                                    },
+                                    contentDescription = null,
+                                    tint = PrimaryEmerald,
+                                    modifier = Modifier.size(38.dp)
+                                )
+                            }
+                        }
                     }
                 }
-            }
-
-            // Promo Card 2: Lubrificantes e Troca de Filtros
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onNavigateToStore() }
-                    .testTag("promo_oleo_card")
-            ) {
-                Row(
+            } else {
+                // Fallback default promo card
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = SurfaceContainerHigh),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .clickable { onOpenBooking("Ducha Express Gratuita") }
+                        .testTag("promo_ducha_card")
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(PrimaryEmerald.copy(alpha = 0.15f))
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(SecondaryGold.copy(alpha = 0.15f))
+                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = "PROMOÇÃO 50 LITROS",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = SecondaryGold,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "PIT STOP LUBRAX",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = PrimaryEmerald,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 10.sp
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Óleo Sintético 5W30",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = OnSurface,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Ganhe o filtro de combustível e verificação de 15 itens essenciais.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = OnSurfaceVariant,
-                            fontSize = 12.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Conferir marcas na loja",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = SecondaryGold,
+                                text = "Ducha Express Gratuita",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = OnSurface,
                                 fontWeight = FontWeight.Bold
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
-                                tint = SecondaryGold,
-                                modifier = Modifier.size(14.dp)
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Abasteça 50L ou mais em uma única compra e ganhe a lavagem de cortesia.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = OnSurfaceVariant,
+                                fontSize = 12.sp
                             )
                         }
-                    }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
 
-                    Box(
-                        modifier = Modifier
-                            .size(76.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(SurfaceContainerLowest),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.OilBarrel,
-                            contentDescription = null,
-                            tint = SecondaryGold,
-                            modifier = Modifier.size(38.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(76.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(SurfaceContainerLowest),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocalCarWash,
+                                contentDescription = null,
+                                tint = PrimaryEmerald,
+                                modifier = Modifier.size(38.dp)
+                            )
+                        }
                     }
                 }
             }

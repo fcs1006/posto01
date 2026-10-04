@@ -37,148 +37,67 @@ class PetrosRepository(
     private val loyaltyDao = database.loyaltyDao()
 
     suspend fun initializeDefaultData() = withContext(Dispatchers.IO) {
-        // Initialize loyalty profile if empty
+        // Clear all mock cards and mock transactions so the app starts 100% clean
+        cardDao.clearAllCards()
+        transactionDao.clearAllTransactions()
+
+        // Clean user profile if empty or containing previous mock data
         val currentProfile = loyaltyDao.getProfile().firstOrNull()
-        if (currentProfile == null) {
+        if (currentProfile == null || currentProfile.name.contains("Carlos", ignoreCase = true) || currentProfile.cpf == "123.456.789-00") {
             loyaltyDao.saveProfile(
                 LoyaltyProfileEntity(
-                    cpf = "123.456.789-00",
-                    name = "Carlos Eduardo",
-                    email = "carlos.eduardo@email.com",
-                    phone = "(11) 98765-4321",
-                    tier = "Membro Black • Ativo",
-                    pointsBalance = 1480,
-                    cashbackBalance = 15.20,
-                    monthlySavings = 48.50,
-                    vehiclePlate = "BRA-2E19",
-                    vehicleModel = "Honda Civic 2021",
-                    habitualFuel = "Gasolina Aditivada",
-                    isBlackMember = true
+                    cpf = "",
+                    name = "",
+                    email = "",
+                    phone = "",
+                    tier = "Visitante",
+                    pointsBalance = 0,
+                    cashbackBalance = 0.0,
+                    monthlySavings = 0.0,
+                    vehiclePlate = "",
+                    vehicleModel = "",
+                    habitualFuel = "Gasolina Comum",
+                    isBlackMember = false
                 )
             )
         }
 
-        // Initialize cards if empty
-        if (cardDao.countCards() == 0) {
-            cardDao.insertCard(
-                PaymentCardEntity(
-                    holderName = "CARLOS E SILVA",
-                    last4 = "4821",
-                    brand = "Mastercard",
-                    expiry = "11/29",
-                    isDefault = true,
-                    type = "CRÉDITO"
+        // Initialize general system notifications if none
+        if (notificationDao.getAllNotifications().firstOrNull().isNullOrEmpty()) {
+            val welcomeNotifs = listOf(
+                NotificationEntity(
+                    id = "notif-welcome",
+                    title = "Bem-vindo ao Auto Posto 01! ⛽",
+                    message = "Faça seu login com o Google ou cadastre seu CPF para liberar descontos exclusivos em Barreiras.",
+                    timestamp = System.currentTimeMillis(),
+                    timeAgo = "Agora",
+                    isRead = false,
+                    type = "PROMO"
                 )
             )
-            cardDao.insertCard(
-                PaymentCardEntity(
-                    holderName = "CARLOS E SILVA",
-                    last4 = "1092",
-                    brand = "Visa",
-                    expiry = "08/28",
-                    isDefault = false,
-                    type = "DÉBITO"
-                )
-            )
+            notificationDao.insertNotifications(welcomeNotifs)
         }
+    }
 
-        // Initialize transactions if empty
-        if (transactionDao.countTransactions() == 0) {
-            val now = System.currentTimeMillis()
-            val dayMs = 86400000L
-            transactionDao.insertTransaction(
-                FuelTransactionEntity(
-                    code = "PTR-98214",
-                    petrosAuthCode = "PETROS-AUTH-8829",
-                    timestamp = now - 1800000L,
-                    dateFormatted = "Hoje às 14:20 • Bomba 04",
-                    stationName = "Unidade 01 - Matriz Jardins",
-                    pumpNumber = "04",
-                    fuelType = "Gasolina Aditivada",
-                    liters = 35.00,
-                    pricePerLiter = 5.89,
-                    subtotal = 206.15,
-                    discount = 10.50,
-                    finalAmount = 180.45,
-                    paymentMethod = "Pix Instantâneo",
-                    status = "PAGO",
-                    pointsEarned = 70,
-                    cashbackEarned = 1.95
-                )
-            )
-            transactionDao.insertTransaction(
-                FuelTransactionEntity(
-                    code = "PTR-97451",
-                    petrosAuthCode = "PETROS-AUTH-7412",
-                    timestamp = now - dayMs,
-                    dateFormatted = "Ontem às 18:42 • Bomba 02",
-                    stationName = "Unidade 01 - Matriz Jardins",
-                    pumpNumber = "02",
-                    fuelType = "Etanol Comum",
-                    liters = 42.10,
-                    pricePerLiter = 3.69,
-                    subtotal = 172.18,
-                    discount = 8.42,
-                    finalAmount = 163.76,
-                    paymentMethod = "Pix Instantâneo",
-                    status = "PAGO",
-                    pointsEarned = 84,
-                    cashbackEarned = 1.63
-                )
-            )
-            transactionDao.insertTransaction(
-                FuelTransactionEntity(
-                    code = "PTR-96110",
-                    petrosAuthCode = "PETROS-AUTH-5541",
-                    timestamp = now - (3 * dayMs),
-                    dateFormatted = "14 Mar, 09:15 • Bomba 06",
-                    stationName = "Unidade 02 - Rodovia Express",
-                    pumpNumber = "06",
-                    fuelType = "Gasolina Comum",
-                    liters = 20.00,
-                    pricePerLiter = 5.59,
-                    subtotal = 117.80,
-                    discount = 6.00,
-                    finalAmount = 111.80,
-                    paymentMethod = "Mastercard •••• 4821",
-                    status = "PAGO",
-                    pointsEarned = 40,
-                    cashbackEarned = 1.11
-                )
-            )
-        }
-
-        // Initialize sample notifications
-        val sampleNotifs = listOf(
-            NotificationEntity(
-                id = "notif-1",
-                title = "Promoção 50 Litros Ativa! 🚗💦",
-                message = "Abasteça 50L ou mais em uma única compra e ganhe Ducha Express de cortesia com cera líquida.",
-                timestamp = System.currentTimeMillis() - 3600000,
-                timeAgo = "Há 1 hora",
-                isRead = false,
-                type = "PROMO"
-            ),
-            NotificationEntity(
-                id = "notif-2",
-                title = "Pit Stop Lubrax Especial 🛢️",
-                message = "Troque o óleo sintético 5W30 e ganhe o filtro de combustível + checkup de 15 itens essenciais.",
-                timestamp = System.currentTimeMillis() - 7200000,
-                timeAgo = "Há 2 horas",
-                isRead = false,
-                type = "PROMO"
-            ),
-            NotificationEntity(
-                id = "notif-3",
-                title = "Cashback Creditado no Clube 01 💰",
-                message = "R$ 1,95 de cashback foi adicionado à sua carteira pelo abastecimento na Bomba 04.",
-                timestamp = System.currentTimeMillis() - 86400000,
-                timeAgo = "Ontem",
-                isRead = true,
-                type = "CASHBACK"
+    suspend fun clearAllMockData() = withContext(Dispatchers.IO) {
+        cardDao.clearAllCards()
+        transactionDao.clearAllTransactions()
+        loyaltyDao.saveProfile(
+            LoyaltyProfileEntity(
+                cpf = "",
+                name = "",
+                email = "",
+                phone = "",
+                tier = "Visitante",
+                pointsBalance = 0,
+                cashbackBalance = 0.0,
+                monthlySavings = 0.0,
+                vehiclePlate = "",
+                vehicleModel = "",
+                habitualFuel = "Gasolina Comum",
+                isBlackMember = false
             )
         )
-        notificationDao.insertNotifications(sampleNotifs)
     }
 
     fun getProfileFlow(): Flow<UserProfile> {
@@ -200,18 +119,18 @@ class PetrosRepository(
                 )
             } else {
                 UserProfile(
-                    name = "Carlos Eduardo",
-                    email = "carlos.eduardo@email.com",
-                    cpf = "123.456.789-00",
-                    phone = "(11) 98765-4321",
-                    tier = "Membro Black • Ativo",
-                    pointsBalance = 1480,
-                    cashbackBalance = 15.20,
-                    monthlySavings = 48.50,
-                    vehiclePlate = "BRA-2E19",
-                    vehicleModel = "Honda Civic 2021",
-                    habitualFuel = "Gasolina Aditivada",
-                    isBlackMember = true
+                    name = "",
+                    email = "",
+                    cpf = "",
+                    phone = "",
+                    tier = "Visitante",
+                    pointsBalance = 0,
+                    cashbackBalance = 0.0,
+                    monthlySavings = 0.0,
+                    vehiclePlate = "",
+                    vehicleModel = "",
+                    habitualFuel = "Gasolina Comum",
+                    isBlackMember = false
                 )
             }
         }.flowOn(Dispatchers.IO)
@@ -435,11 +354,11 @@ class PetrosRepository(
             Station(
                 id = 1,
                 code = "UN-01",
-                name = "Unidade 01 - Matriz Jardins",
-                address = "Av. Brasil, 1420",
-                neighborhood = "Jardins, São Paulo",
-                distanceKm = 1.2,
-                travelTimeMinutes = 4,
+                name = "Auto Posto 01 • Matriz Clériston Andrade",
+                address = "Av. Clériston Andrade",
+                neighborhood = "Vila Dulce, Barreiras - BA, 47800-358",
+                distanceKm = 0.8,
+                travelTimeMinutes = 2,
                 isOpen24h = true,
                 rating = 4.9,
                 reviewsCount = 428,
@@ -450,19 +369,19 @@ class PetrosRepository(
                 hasTireCalibration = true,
                 hasEvCharging = true,
                 hasGnv = false,
-                phone = "(11) 3080-0001",
-                latitude = -23.5708,
-                longitude = -46.6698,
+                phone = "(77) 3611-0101",
+                latitude = -12.145903771769904,
+                longitude = -44.992762813692174,
                 fuels = fuels
             ),
             Station(
                 id = 2,
                 code = "UN-02",
-                name = "Unidade 02 - Rodovia Express",
-                address = "Rodovia SP-330, Km 45",
-                neighborhood = "Sentido Interior, SP",
-                distanceKm = 4.8,
-                travelTimeMinutes = 9,
+                name = "Auto Posto 01 • Unidade José Bonifácio",
+                address = "Av. José Bonifácio",
+                neighborhood = "Vila Brasil, Barreiras - BA, 47801-230",
+                distanceKm = 1.4,
+                travelTimeMinutes = 4,
                 isOpen24h = true,
                 rating = 4.8,
                 reviewsCount = 312,
@@ -473,32 +392,32 @@ class PetrosRepository(
                 hasTireCalibration = true,
                 hasEvCharging = false,
                 hasGnv = false,
-                phone = "(11) 4580-0002",
-                latitude = -23.4900,
-                longitude = -46.7500,
+                phone = "(77) 3611-0102",
+                latitude = -12.141580583248611,
+                longitude = -44.990239621481614,
                 fuels = fuels
             ),
             Station(
                 id = 3,
                 code = "UN-03",
-                name = "Unidade 03 - Jardim América",
-                address = "Rua das Flores, 880",
-                neighborhood = "Centro Sul, SP",
-                distanceKm = 6.1,
-                travelTimeMinutes = 14,
-                isOpen24h = false,
-                rating = 4.7,
-                reviewsCount = 195,
+                name = "Auto Posto 01 • Unidade Castelo Branco",
+                address = "Av. Castelo Branco, 301",
+                neighborhood = "Vila Brasil, Barreiras - BA, 47800-515",
+                distanceKm = 2.3,
+                travelTimeMinutes = 6,
+                isOpen24h = true,
+                rating = 4.9,
+                reviewsCount = 285,
                 isFavorite = false,
                 hasConvenience = true,
                 hasOilChange = true,
                 hasCarWash = true,
                 hasTireCalibration = true,
                 hasEvCharging = true,
-                hasGnv = true,
-                phone = "(11) 3888-0003",
-                latitude = -23.5850,
-                longitude = -46.6620,
+                hasGnv = false,
+                phone = "(77) 3611-0103",
+                latitude = -12.138640416584256,
+                longitude = -44.97708358834687,
                 fuels = fuels
             )
         )

@@ -294,7 +294,7 @@ fun WalletPaymentScreen(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Icon(imageVector = Icons.Default.Verified, contentDescription = null, tint = TertiaryGreen, modifier = Modifier.size(16.dp))
                             }
-                            Text(text = "Bico 02 • Posto 01 Nações", style = MaterialTheme.typography.bodySmall, color = OnSurfaceVariant, fontSize = 11.sp)
+                            Text(text = "Bico 02 • Auto Posto 01 (Barreiras - BA)", style = MaterialTheme.typography.bodySmall, color = OnSurfaceVariant, fontSize = 11.sp)
                         }
                     }
 
@@ -517,26 +517,26 @@ fun WalletPaymentScreen(
                 onClick = { onSelectPaymentMethod("PIX") }
             )
 
-            // Option 2: Mastercard 4821
-            PaymentMethodItem(
-                title = "Mastercard •••• 4821",
-                subtitle = "Crédito Digital • Auto Posto VIP",
-                badge = "À vista (1x de R$ ${String.format(Locale.GERMAN, "%.2f", finalTotal)})",
-                isSelected = selectedPaymentMethod == "CREDIT_4821",
-                icon = Icons.Default.CreditCard,
-                iconTint = SecondaryGold,
-                onClick = { onSelectPaymentMethod("CREDIT_4821") }
-            )
+            savedCards.forEach { card ->
+                PaymentMethodItem(
+                    title = "${card.brand} •••• ${card.last4}",
+                    subtitle = "${card.type} • ${card.holderName}",
+                    badge = if (card.isDefault) "PADRÃO" else null,
+                    isSelected = selectedPaymentMethod == "CARD_${card.id}",
+                    icon = Icons.Default.CreditCard,
+                    iconTint = if (card.type.contains("CRÉDITO", ignoreCase = true)) SecondaryGold else OnSurfaceVariant,
+                    onClick = { onSelectPaymentMethod("CARD_${card.id}") }
+                )
+            }
 
-            // Option 3: Visa Débito 1092
             PaymentMethodItem(
-                title = "Visa Débito •••• 1092",
-                subtitle = "Débito em Conta • Banco Inter",
-                badge = null,
-                isSelected = selectedPaymentMethod == "DEBIT_1092",
+                title = "Pagar na Cielo Smart do Frentista",
+                subtitle = "Cartão de débito, crédito ou dinheiro na pista",
+                badge = "NA PISTA",
+                isSelected = selectedPaymentMethod == "CIELO_POS",
                 icon = Icons.Default.CreditCard,
-                iconTint = OnSurfaceVariant,
-                onClick = { onSelectPaymentMethod("DEBIT_1092") }
+                iconTint = PrimaryEmerald,
+                onClick = { onSelectPaymentMethod("CIELO_POS") }
             )
 
             // Add new card button
@@ -552,6 +552,55 @@ fun WalletPaymentScreen(
                 Icon(imageVector = Icons.Default.AddCard, contentDescription = null, tint = PrimaryEmerald, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Adicionar Novo Cartão", color = OnSurface, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        // 5.5 Cielo Smart POS & Frentista Integration Banner
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = SurfaceContainerHigh,
+            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryEmerald.copy(alpha = 0.35f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(PrimaryContainerEmerald.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CreditCard,
+                        contentDescription = null,
+                        tint = PrimaryEmerald,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Maquininha Cielo Smart do Frentista",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = OnSurface,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "O frentista valida seu CPF ou QR Code no app Petros da maquininha Cielo Smart. O desconto do Clube ou convênio Uber/Táxi (-R$ 0,15/L) entra no fechamento do bico.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = OnSurfaceVariant,
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
+                    )
+                }
             }
         }
 

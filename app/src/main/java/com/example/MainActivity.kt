@@ -51,10 +51,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.MainViewModel
 import com.example.ui.components.AddCardDialog
+import com.example.ui.components.AdminManagerDialog
 import com.example.ui.components.AlcoholVsGasCalculatorDialog
 import com.example.ui.components.AutoPostoBottomBar
 import com.example.ui.components.AutoPostoTopBar
 import com.example.ui.components.BookingServiceDialog
+import com.example.ui.components.GoogleSignInDialog
 import com.example.ui.components.NotificationsSheet
 import com.example.ui.components.PetrosSyncDialog
 import com.example.ui.components.PixPaymentSheet
@@ -63,6 +65,7 @@ import com.example.ui.navigation.Screen
 import com.example.ui.screens.ClubeScreen
 import com.example.ui.screens.HistoryScreen
 import com.example.ui.screens.HomeScreen
+import com.example.ui.screens.LoginScreen
 import com.example.ui.screens.StationsMapScreen
 import com.example.ui.screens.StoreScreen
 import com.example.ui.screens.WalletPaymentScreen
@@ -97,14 +100,33 @@ fun MainAppRoot(
     viewModel: MainViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var currentRoute by rememberSaveable { mutableStateOf(Screen.Home.route) }
+    val hasUserInDatabase = uiState.userProfile.name.isNotBlank() && (uiState.userProfile.cpf.isNotBlank() || uiState.userProfile.email.isNotBlank())
+    var currentRoute by rememberSaveable {
+        mutableStateOf(if (uiState.isAuthenticated) Screen.Home.route else Screen.Login.route)
+    }
     val context = LocalContext.current
 
-    BackHandler(enabled = currentRoute != Screen.Home.route) {
-        currentRoute = if (currentRoute == Screen.History.route) {
-            Screen.Wallet.route
+    // Lock non-authenticated users to LoginScreen (No guest mode)
+    LaunchedEffect(uiState.isAuthenticated) {
+        if (!uiState.isAuthenticated) {
+            currentRoute = Screen.Login.route
+        } else if (currentRoute == Screen.Login.route) {
+            currentRoute = Screen.Home.route
+        }
+    }
+
+    BackHandler(enabled = true) {
+        if (!uiState.isAuthenticated) {
+            activity.finish()
         } else {
-            Screen.Home.route
+            currentRoute = when (currentRoute) {
+                Screen.History.route -> Screen.Wallet.route
+                Screen.Home.route -> {
+                    activity.finish()
+                    Screen.Home.route
+                }
+                else -> Screen.Home.route
+            }
         }
     }
 
@@ -120,29 +142,33 @@ fun MainAppRoot(
 
     Scaffold(
         topBar = {
-            val title = when (currentRoute) {
-                Screen.Stations.route -> "Postos"
-                Screen.Store.route -> "Loja"
-                Screen.Clube.route -> "Clube De Vantagens"
-                Screen.Wallet.route -> "Carteira"
-                Screen.History.route -> "Histórico"
-                else -> "Início"
-            }
+            if (currentRoute != Screen.Login.route) {
+                val title = when (currentRoute) {
+                    Screen.Stations.route -> "Postos"
+                    Screen.Store.route -> "Loja"
+                    Screen.Clube.route -> "Clube De Vantagens"
+                    Screen.Wallet.route -> "Carteira"
+                    Screen.History.route -> "Histórico"
+                    else -> "Início"
+                }
 
-            AutoPostoTopBar(
-                title = title,
-                unreadNotifCount = unreadNotifs,
-                showBackButton = currentRoute == Screen.History.route,
-                onBackClick = { currentRoute = Screen.Wallet.route },
-                onNotificationsClick = { viewModel.setShowNotificationsSheet(true) },
-                onProfileClick = { currentRoute = Screen.Clube.route }
-            )
+                AutoPostoTopBar(
+                    title = title,
+                    unreadNotifCount = unreadNotifs,
+                    showBackButton = currentRoute == Screen.History.route,
+                    onBackClick = { currentRoute = Screen.Wallet.route },
+                    onNotificationsClick = { viewModel.setShowNotificationsSheet(true) },
+                    onProfileClick = { currentRoute = Screen.Clube.route }
+                )
+            }
         },
         bottomBar = {
-            AutoPostoBottomBar(
-                currentRoute = currentRoute,
-                onNavigate = { route -> currentRoute = route }
-            )
+            if (currentRoute != Screen.Login.route) {
+                AutoPostoBottomBar(
+                    currentRoute = currentRoute,
+                    onNavigate = { route -> currentRoute = route }
+                )
+            }
         },
         containerColor = SurfaceDark
     ) { innerPadding ->
@@ -157,13 +183,15 @@ fun MainAppRoot(
                     HomeScreen(
                         userProfile = uiState.userProfile,
                         fuelPrices = uiState.fuelPrices,
+                        promotions = uiState.promotions,
                         currentStation = uiState.selectedStation,
                         onNavigateToWallet = { currentRoute = Screen.Wallet.route },
                         onNavigateToStations = { currentRoute = Screen.Stations.route },
                         onNavigateToStore = { currentRoute = Screen.Store.route },
                         onNavigateToClube = { currentRoute = Screen.Clube.route },
                         onOpenCalculator = { viewModel.setShowAlcoholGasCalculator(true) },
-                        onOpenBooking = { service -> viewModel.openBookingDialog(service) }
+                        onOpenBooking = { service -> viewModel.openBookingDialog(service) },
+                        onOpenAdminManager = { viewModel.setShowAdminManagerDialog(true) }
                     )
                 }
 
@@ -202,6 +230,31 @@ fun MainAppRoot(
                         },
                         onGoogleSignIn = {
                             viewModel.triggerGoogleLogin(context)
+                        },
+                        onLogout = {
+                            viewModel.logout()
+                            currentRoute = Screen.Login.route
+                        }
+                    )
+                }
+
+                Screen.Login.route -> {
+                    LoginScreen(
+                        canUseBiometrics = hasUserInDatabase,
+                        onLoginSuccess = { name, cpf, email ->
+                            viewModel.loginUser(name, cpf, email) {
+                                currentRoute = Screen.Home.route
+                            }
+                        },
+                        onGoogleSignInClick = {
+                            viewModel.triggerGoogleLogin(context) {
+                                currentRoute = Screen.Home.route
+                            }
+                        },
+                        onBiometricClick = {
+                            viewModel.triggerBiometricLogin(activity) {
+                                currentRoute = Screen.Home.route
+                            }
                         }
                     )
                 }
@@ -343,6 +396,7 @@ fun MainAppRoot(
     if (uiState.showBookingDialog) {
         BookingServiceDialog(
             serviceName = uiState.bookingServiceName,
+            vehiclePlate = uiState.userProfile.vehiclePlate,
             onConfirm = { day, time ->
                 viewModel.confirmBooking(day, time)
             },
@@ -411,5 +465,32 @@ fun MainAppRoot(
                 }
             }
         }
+    }
+
+    if (uiState.showAdminManagerDialog) {
+        AdminManagerDialog(
+            fuelPrices = uiState.fuelPrices,
+            promotions = uiState.promotions,
+            onUpdateFuelPrice = { id, pump, club ->
+                viewModel.updateFuelPrice(id, pump, club)
+            },
+            onSavePromotion = { promo ->
+                viewModel.savePromotion(promo)
+            },
+            onTogglePromotion = { id, active ->
+                viewModel.togglePromotion(id, active)
+            },
+            onDismiss = { viewModel.setShowAdminManagerDialog(false) }
+        )
+    }
+
+    if (uiState.showGoogleSignInDialog) {
+        GoogleSignInDialog(
+            initialEmail = uiState.userProfile.email.ifBlank { "fcs456@gmail.com" },
+            onConfirm = { name, email ->
+                viewModel.loginWithGoogleAccount(name, email)
+            },
+            onDismiss = { viewModel.setShowGoogleSignInDialog(false) }
+        )
     }
 }

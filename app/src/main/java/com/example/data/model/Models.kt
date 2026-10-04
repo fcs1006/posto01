@@ -1,14 +1,32 @@
 package com.example.data.model
 
 data class FuelPrice(
-    val id: String,
-    val name: String,
-    val pumpPrice: Double,
-    val clubPrice: Double,
-    val discountPerLiter: Double,
-    val fuelType: String,
+    val id: String = "",
+    val name: String = "",
+    val pumpPrice: Double = 0.0,
+    val clubPrice: Double = 0.0,
+    val discountPerLiter: Double = 0.0,
+    val fuelType: String = "",
     val badgeText: String = "",
-    val iconType: String = "fuel"
+    val iconType: String = "fuel",
+    val updatedAt: Long = System.currentTimeMillis()
+)
+
+data class PromotionItem(
+    val id: String = "",
+    val title: String = "",
+    val subtitle: String = "",
+    val tag: String = "",
+    val description: String = "",
+    val badge: String = "",
+    val buttonText: String = "Aproveitar",
+    val actionType: String = "BOOKING",
+    val actionTarget: String = "",
+    val discountText: String = "",
+    val iconName: String = "car_wash",
+    val isActive: Boolean = true,
+    val order: Int = 0,
+    val updatedAt: Long = System.currentTimeMillis()
 )
 
 enum class PumpStatus {

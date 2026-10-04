@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Info
@@ -44,6 +45,7 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -89,7 +91,8 @@ import java.util.Locale
 fun ClubeScreen(
     userProfile: UserProfile,
     onSaveProfile: (name: String, cpf: String, phone: String, plate: String, model: String, fuel: String) -> Unit,
-    onGoogleSignIn: () -> Unit
+    onGoogleSignIn: () -> Unit,
+    onLogout: () -> Unit = {}
 ) {
     var nameInput by remember { mutableStateOf(userProfile.name) }
     var cpfInput by remember { mutableStateOf(userProfile.cpf) }
@@ -245,7 +248,7 @@ fun ClubeScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = nameInput.ifBlank { "Seu Nome Aqui" },
+                                    text = nameInput.ifBlank { "Motorista Visitante" },
                                     style = MaterialTheme.typography.titleMedium,
                                     color = OnSurface,
                                     fontWeight = FontWeight.ExtraBold
@@ -263,7 +266,7 @@ fun ClubeScreen(
                                 Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(SecondaryGold))
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = userProfile.tier.take(11),
+                                    text = userProfile.tier.ifBlank { "Visitante" }.take(14),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = OnSurface,
                                     fontSize = 10.sp,
@@ -286,7 +289,7 @@ fun ClubeScreen(
                                 fontSize = 10.sp
                             )
                             Text(
-                                text = plateInput.ifBlank { "BRA-2E19" }.uppercase(),
+                                text = plateInput.ifBlank { "NÃO VINCULADA" }.uppercase(),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = PrimaryEmerald,
                                 fontWeight = FontWeight.ExtraBold,
@@ -351,28 +354,95 @@ fun ClubeScreen(
             }
         }
 
-        // Quick Google Login button if needed
-        Button(
-            onClick = onGoogleSignIn,
-            colors = ButtonDefaults.buttonColors(containerColor = SurfaceContainerHigh),
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("google_signin_button")
+        // 2.5 Real Google Sign-In Section
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = SurfaceContainerHigh,
+            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryEmerald.copy(alpha = 0.35f)),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = null,
-                tint = PrimaryEmerald,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Conectar / Sincronizar com Conta Google",
-                color = OnSurface,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold
-            )
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(PrimaryContainerEmerald.copy(alpha = 0.25f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(imageVector = Icons.Default.Person, contentDescription = null, tint = PrimaryEmerald, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                text = if (userProfile.email.isNotBlank()) "Conta Google Conectada" else "Login Oficial com Google",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = OnSurface,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = if (userProfile.email.isNotBlank()) userProfile.email else "Conecte sua conta real para salvar seus pontos",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (userProfile.email.isNotBlank()) PrimaryEmerald else OnSurfaceVariant,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+
+                    if (userProfile.email.isNotBlank()) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(PrimaryEmerald.copy(alpha = 0.2f))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(text = "CONECTADO", color = PrimaryEmerald, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = onGoogleSignIn,
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryEmerald),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp)
+                            .testTag("google_signin_button")
+                    ) {
+                        Text(
+                            text = if (userProfile.email.isNotBlank()) "Trocar Conta Google" else "Entrar com Google (Real)",
+                            color = OnPrimaryEmerald,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    if (userProfile.email.isNotBlank() || userProfile.cpf.isNotBlank()) {
+                        OutlinedButton(
+                            onClick = onLogout,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .height(46.dp)
+                                .testTag("clube_logout_button")
+                        ) {
+                            Text(text = "Sair / Limpar", color = OnSurfaceVariant, fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
         }
 
         // 3. Form Fields
@@ -437,7 +507,7 @@ fun ClubeScreen(
                     Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = SecondaryGold, modifier = Modifier.size(13.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Seu CPF é a chave para aplicar o desconto direto no terminal do frentista.",
+                        text = "Seu CPF ou QR Code é lido na maquininha Cielo Smart do frentista na pista para aplicar o desconto automático do Petros.",
                         style = MaterialTheme.typography.labelSmall,
                         color = OnSurfaceVariant,
                         fontSize = 10.sp
@@ -569,6 +639,109 @@ fun ClubeScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
+                        }
+                    }
+                }
+            }
+
+            // Convênio Oficial Petros: Motoristas de App & Taxistas
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = SurfaceContainerHigh,
+                border = androidx.compose.foundation.BorderStroke(1.2.dp, SecondaryGold.copy(alpha = 0.5f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("convenio_uber_taxi_card")
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(SecondaryGold.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DirectionsCar,
+                                    contentDescription = null,
+                                    tint = SecondaryGold,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Convênio Uber, 99 & Taxistas",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = OnSurface,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Cadastrado no Servidor Petros Desktop",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = SecondaryGold,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(SecondaryGold)
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "-R$ 0,15/L",
+                                color = OnSecondaryGold,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "Tabela de desconto oficial do Grupo 01! Ao abastecer em qualquer unidade de Barreiras, informe seu CPF ou mostre o QR Code na maquininha Cielo Smart do frentista. O sistema Petros valida sua placa e aplica o desconto automático.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = OnSurfaceVariant,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = SurfaceContainerLowest,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Verified,
+                                contentDescription = null,
+                                tint = PrimaryEmerald,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Placa $plateInput autorizada no Petros com R$ 0,15/L de desconto.",
+                                color = PrimaryEmerald,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 11.sp
+                            )
                         }
                     }
                 }
@@ -743,5 +916,32 @@ fun ClubeScreen(
             modifier = Modifier.fillMaxWidth(),
             fontSize = 11.sp
         )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        OutlinedButton(
+            onClick = onLogout,
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = SurfaceContainerLow),
+            border = androidx.compose.foundation.BorderStroke(1.dp, SurfaceContainerHigh),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .testTag("clube_logout_button")
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Logout,
+                contentDescription = "Sair",
+                tint = OnSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Trocar de Conta / Tela de Login",
+                color = OnSurfaceVariant,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp
+            )
+        }
     }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "Auto Posto 01",
+  "name": "Clube 01",
   "description": "App oficial da rede Auto Posto 01 com integração Adaptive Petros, pagamentos via Pix e cartões, clube de pontos fidelidade, biometria e mapa de postos.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
