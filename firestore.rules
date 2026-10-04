@@ -1,0 +1,48 @@
+rules_version = '2';
+// Regras de produção do Firestore — Auto Posto 01 (Clube 01)
+//
+// Coleções usadas pelo app:
+//   fuel_prices   -> preços de combustível (leitura pública, escrita admin)
+//   promotions    -> promoções/campanhas  (leitura pública, escrita admin)
+//   stations      -> postos                (leitura pública, escrita admin)
+//
+// COMO TORNAR-SE ADMIN (importante):
+//   As escritas só são permitidas para usuários com a custom claim "admin".
+//   Para atribuir o claim a um usuário, use o Firebase CLI (após logar com
+//   'firebase login'):
+//
+//     firebase auth:setcustomclaims SEU_UID admin=true
+//
+//   O UID aparece em: Console Firebase -> Authentication -> Users -> clique no usuário.
+//
+//   Para TESTAR localmente sem o claim, troque temporariamente "isAdmin()" por
+//   "isSignedIn()" nas regras de escrita e depois volte para "isAdmin()".
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    // Leitura liberada para todos (dados públicos de exibição no app)
+    match /fuel_prices/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /promotions/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /stations/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
