@@ -406,8 +406,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     onComplete()
                 }
             } else {
-                // If native CredentialManager could not open on this device/emulator,
-                // open the Google Account selection dialog so user can enter/verify their real account!
+                val reason = result.exceptionOrNull()?.message ?: "erro desconhecido"
+                showToast("Google não abriu: $reason")
                 _uiState.update { it.copy(showGoogleSignInDialog = true) }
             }
         }
