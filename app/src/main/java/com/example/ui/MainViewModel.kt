@@ -5,11 +5,13 @@ import android.content.Context
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.firebase.FirestoreService
 import com.example.data.local.AppDatabase
 import com.example.data.model.FuelPrice
 import com.example.data.model.PaymentCard
 import com.example.data.model.PetrosSyncState
 import com.example.data.model.ProductItem
+import com.example.data.model.PromotionItem
 import com.example.data.model.PushNotification
 import com.example.data.model.Station
 import com.example.data.model.TransactionRecord
@@ -27,27 +29,27 @@ import kotlinx.coroutines.launch
 
 data class MainUiState(
     val userProfile: UserProfile = UserProfile(
-        name = "Carlos Eduardo",
-        email = "carlos.eduardo@gmail.com",
-        cpf = "123.456.789-00",
-        phone = "(11) 98765-4321",
-        tier = "Membro Black • Ativo",
-        pointsBalance = 1480,
-        cashbackBalance = 15.20,
-        monthlySavings = 48.50,
-        vehiclePlate = "BRA-2E19",
-        vehicleModel = "Honda Civic 2021",
-        habitualFuel = "Gasolina Aditivada",
-        isBlackMember = true
+        name = "",
+        email = "",
+        cpf = "",
+        phone = "",
+        tier = "Visitante",
+        pointsBalance = 0,
+        cashbackBalance = 0.0,
+        monthlySavings = 0.0,
+        vehiclePlate = "",
+        vehicleModel = "",
+        habitualFuel = "Gasolina Comum",
+        isBlackMember = false
     ),
     val fuelPrices: List<FuelPrice> = emptyList(),
     val stations: List<Station> = emptyList(),
     val selectedStation: Station? = null,
-    val selectedPumpNumber: String = "04",
+    val selectedPumpNumber: String = "01",
     val selectedFuel: FuelPrice? = null,
-    val volumeLiters: Double = 35.00,
-    val useCashback: Boolean = true,
-    val selectedPaymentMethod: String = "PIX", // "PIX", "CREDIT_4821", "DEBIT_1092"
+    val volumeLiters: Double = 20.00,
+    val useCashback: Boolean = false,
+    val selectedPaymentMethod: String = "PIX",
     val savedCards: List<PaymentCard> = emptyList(),
     val transactions: List<TransactionRecord> = emptyList(),
     val notifications: List<PushNotification> = emptyList(),
@@ -68,6 +70,10 @@ data class MainUiState(
     val showAlcoholGasCalculator: Boolean = false,
     val showBookingDialog: Boolean = false,
     val bookingServiceName: String = "Pit Stop Troca de Óleo",
+    val promotions: List<PromotionItem> = emptyList(),
+    val showAdminManagerDialog: Boolean = false,
+    val showGoogleSignInDialog: Boolean = false,
+    val isAuthenticated: Boolean = false,
     val toastMessage: String? = null
 )
 
@@ -75,6 +81,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val database = AppDatabase.getInstance(application)
     private val repository = PetrosRepository(database)
+    private val firestoreService = FirestoreService(application)
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -83,6 +90,87 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         NotificationHelper.createNotificationChannels(application)
         loadInitialData()
         observeDatabase()
+        observeFirestore()
+    }
+
+    private fun observeFirestore() {
+        viewModelScope.launch {
+            firestoreService.fuelPricesFlow.collect { prices ->
+                if (prices.isNotEmpty()) {
+                    _uiState.update { state ->
+                        val selected = state.selectedFuel?.let { curr ->
+                            prices.find { it.id == curr.id }
+                        } ?: prices.firstOrNull { it.id == "gas-aditivada" } ?: prices.firstOrNull()
+
+                        val updatedStations = state.stations.map { it.copy(fuels = prices) }
+                        val updatedSelectedStation = state.selectedStation?.copy(fuels = prices)
+
+                        state.copy(
+                            fuelPrices = prices,
+                            selectedFuel = selected,
+                            stations = updatedStations,
+                            selectedStation = updatedSelectedStation
+                        )
+                    }
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            firestoreService.promotionsFlow.collect { promos ->
+                _uiState.update { it.copy(promotions = promos) }
+            }
+        }
+
+        viewModelScope.launch {
+            firestoreService.stationsFlow.collect { stations ->
+                if (stations.isNotEmpty()) {
+                    _uiState.update { state ->
+                        val selected = state.selectedStation?.let { curr ->
+                            stations.find { it.id == curr.id }
+                        } ?: stations.firstOrNull()
+
+                        state.copy(
+                            stations = stations,
+                            selectedStation = selected
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun updateFuelPrice(fuelId: String, pumpPrice: Double, clubPrice: Double) {
+        viewModelScope.launch {
+            val result = firestoreService.updateFuelPrice(fuelId, pumpPrice, clubPrice)
+            if (result.isSuccess) {
+                showToast("Preço atualizado em tempo real no Firestore!")
+            } else {
+                showToast("Erro ao sincronizar com Firestore.")
+            }
+        }
+    }
+
+    fun savePromotion(promotion: PromotionItem) {
+        viewModelScope.launch {
+            val result = firestoreService.savePromotion(promotion)
+            if (result.isSuccess) {
+                showToast("Promoção publicada com sucesso no Firestore!")
+            } else {
+                showToast("Erro ao salvar promoção.")
+            }
+        }
+    }
+
+    fun togglePromotion(promoId: String, isActive: Boolean) {
+        viewModelScope.launch {
+            firestoreService.togglePromotion(promoId, isActive)
+            showToast(if (isActive) "Campanha ativada no app!" else "Campanha desativada.")
+        }
+    }
+
+    fun setShowAdminManagerDialog(show: Boolean) {
+        _uiState.update { it.copy(showAdminManagerDialog = show) }
     }
 
     private fun loadInitialData() {
@@ -273,12 +361,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         viewModelScope.launch {
             val updated = _uiState.value.userProfile.copy(
-                name = name.ifBlank { "Carlos Eduardo" },
-                cpf = cpf.ifBlank { "123.456.789-00" },
-                phone = phone.ifBlank { "(11) 98765-4321" },
-                vehiclePlate = plate.ifBlank { "BRA-2E19" }.uppercase(),
-                vehicleModel = model.ifBlank { "Honda Civic 2021" },
-                habitualFuel = fuel
+                name = name.trim(),
+                cpf = cpf.trim(),
+                phone = phone.trim(),
+                vehiclePlate = plate.trim().uppercase(),
+                vehicleModel = model.trim(),
+                habitualFuel = fuel,
+                tier = if (name.isNotBlank() || cpf.isNotBlank()) "Membro Clube 01" else "Visitante"
             )
             repository.saveProfile(updated)
             showToast("Cadastro no Clube 01 atualizado! Descontos liberados na bomba.")
@@ -298,7 +387,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun triggerGoogleLogin(context: Context) {
+    fun triggerGoogleLogin(context: Context, onComplete: () -> Unit = {}) {
         viewModelScope.launch {
             val result = GoogleAuthHelper.signInWithGoogle(context)
             if (result.isSuccess) {
@@ -306,12 +395,139 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (data != null) {
                     val updated = _uiState.value.userProfile.copy(
                         name = data.displayName,
-                        email = data.email
+                        email = data.email,
+                        photoUrl = data.profilePictureUri ?: "",
+                        tier = "Membro Clube 01",
+                        pointsBalance = if (_uiState.value.userProfile.pointsBalance == 0) 250 else _uiState.value.userProfile.pointsBalance
                     )
                     repository.saveProfile(updated)
-                    showToast("Conectado com sucesso via Google (${data.email})")
+                    _uiState.update { it.copy(isAuthenticated = true, userProfile = updated, showGoogleSignInDialog = false) }
+                    showToast(if (data.firebaseAuthenticated) "Conectado com sucesso via Google (${data.email})" else "Google conectado localmente — configure o Firebase (google-services.json) para autenticação real.")
+                    onComplete()
                 }
+            } else {
+                // If native CredentialManager could not open on this device/emulator,
+                // open the Google Account selection dialog so user can enter/verify their real account!
+                _uiState.update { it.copy(showGoogleSignInDialog = true) }
             }
+        }
+    }
+
+    fun loginWithGoogleAccount(displayName: String, email: String, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            val currentPoints = _uiState.value.userProfile.pointsBalance
+            val currentCashback = _uiState.value.userProfile.cashbackBalance
+            val updated = _uiState.value.userProfile.copy(
+                name = displayName.ifBlank { email.substringBefore("@") },
+                email = email,
+                tier = "Membro Clube 01",
+                pointsBalance = if (currentPoints == 0) 250 else currentPoints,
+                cashbackBalance = currentCashback
+            )
+            repository.saveProfile(updated)
+            _uiState.update {
+                it.copy(
+                    isAuthenticated = true,
+                    userProfile = updated,
+                    showGoogleSignInDialog = false
+                )
+            }
+            showToast("Login com Google ($email) concluído com sucesso!")
+            onComplete()
+        }
+    }
+
+    fun setShowGoogleSignInDialog(show: Boolean) {
+        _uiState.update { it.copy(showGoogleSignInDialog = show) }
+    }
+
+    fun triggerGoogleSignUp(context: Context, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            val result = GoogleAuthHelper.signInWithGoogle(context)
+            if (result.isSuccess) {
+                val data = result.getOrNull()
+                if (data != null) {
+                    val currentPoints = _uiState.value.userProfile.pointsBalance
+                    val currentCashback = _uiState.value.userProfile.cashbackBalance
+                    val updated = _uiState.value.userProfile.copy(
+                        name = data.displayName,
+                        email = data.email,
+                        tier = "Membro Clube 01",
+                        pointsBalance = currentPoints + 500,
+                        cashbackBalance = currentCashback + 5.0
+                    )
+                    repository.saveProfile(updated)
+                    _uiState.update { it.copy(isAuthenticated = true, userProfile = updated, showGoogleSignInDialog = false) }
+                    showToast("Conta criada via Google! +500 Pontos e R$ 5,00 de Cashback creditados.")
+                    onComplete()
+                }
+            } else {
+                _uiState.update { it.copy(showGoogleSignInDialog = true) }
+            }
+        }
+    }
+
+    fun triggerBiometricLogin(activity: FragmentActivity, onComplete: () -> Unit = {}) {
+        BiometricHelper.authenticate(
+            activity = activity,
+            title = "Acesso Seguro Clube 01",
+            subtitle = "Autentique com sua digital ou reconhecimento facial",
+            description = "Acesse sua carteira e descontos exclusivos",
+            onSuccess = {
+                _uiState.update { it.copy(isAuthenticated = true) }
+                showToast("Autenticação biométrica confirmada!")
+                onComplete()
+            },
+            onError = { err ->
+                showToast(err)
+            }
+        )
+    }
+
+    fun loginUser(name: String, cpf: String, email: String, isNewAccount: Boolean = false, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            val currentPoints = _uiState.value.userProfile.pointsBalance
+            val currentCashback = _uiState.value.userProfile.cashbackBalance
+            val updated = _uiState.value.userProfile.copy(
+                name = name,
+                cpf = cpf,
+                email = email,
+                tier = "Membro Clube 01",
+                pointsBalance = if (isNewAccount) currentPoints + 500 else currentPoints,
+                cashbackBalance = if (isNewAccount) currentCashback + 5.0 else currentCashback
+            )
+            repository.saveProfile(updated)
+            _uiState.update { it.copy(isAuthenticated = true, userProfile = updated) }
+            showToast(if (isNewAccount) "Bem-vindo ao Clube 01, $name! +500 Pontos creditados." else "Bem-vindo de volta ao Clube 01, $name!")
+            onComplete()
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            repository.clearAllMockData()
+            _uiState.update {
+                it.copy(
+                    isAuthenticated = false,
+                    userProfile = UserProfile(
+                        name = "",
+                        email = "",
+                        cpf = "",
+                        phone = "",
+                        tier = "Visitante",
+                        pointsBalance = 0,
+                        cashbackBalance = 0.0,
+                        monthlySavings = 0.0,
+                        vehiclePlate = "",
+                        vehicleModel = "",
+                        habitualFuel = "Gasolina Comum",
+                        isBlackMember = false
+                    ),
+                    savedCards = emptyList(),
+                    transactions = emptyList()
+                )
+            }
+            showToast("Dados limpos. Você saiu da sua conta.")
         }
     }
 
@@ -467,10 +683,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         finalAmount: Double
     ) {
         val state = _uiState.value
-        val cardName = if (state.selectedPaymentMethod.contains("CREDIT")) {
-            "Mastercard •••• 4821"
+        val cardId = state.selectedPaymentMethod.removePrefix("CARD_").toLongOrNull()
+        val selectedCard = state.savedCards.firstOrNull { it.id == cardId }
+        val cardName = if (selectedCard != null) {
+            "${selectedCard.brand} •••• ${selectedCard.last4}"
+        } else if (state.selectedPaymentMethod == "CIELO_POS") {
+            "Cielo Smart POS (Pista)"
         } else {
-            "Visa Débito •••• 1092"
+            "Cartão Cadastrado"
         }
 
         viewModelScope.launch {

@@ -17,6 +17,9 @@ interface TransactionDao {
 
     @Query("SELECT COUNT(*) FROM transactions")
     suspend fun countTransactions(): Int
+
+    @Query("DELETE FROM transactions")
+    suspend fun clearAllTransactions()
 }
 
 @Dao
@@ -32,6 +35,9 @@ interface CardDao {
 
     @Query("SELECT COUNT(*) FROM saved_cards")
     suspend fun countCards(): Int
+
+    @Query("DELETE FROM saved_cards")
+    suspend fun clearAllCards()
 }
 
 @Dao
@@ -62,4 +68,7 @@ interface LoyaltyDao {
 
     @Query("UPDATE loyalty_profile SET cashbackBalance = :newCashback, pointsBalance = :newPoints WHERE id = 1")
     suspend fun updateBalances(newCashback: Double, newPoints: Int)
+
+    @Query("DELETE FROM loyalty_profile")
+    suspend fun clearProfile()
 }

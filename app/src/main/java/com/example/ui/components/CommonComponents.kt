@@ -3,9 +3,12 @@ package com.example.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.res.painterResource
+import com.example.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -113,7 +116,9 @@ fun AutoPostoTopBar(
     onBackClick: () -> Unit = {}
 ) {
     Surface(
-        color = SurfaceDark.copy(alpha = 0.95f),
+        color = SurfaceDark.copy(alpha = 0.98f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x184EDEA3)),
+        shadowElevation = 8.dp,
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding()
@@ -121,7 +126,7 @@ fun AutoPostoTopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -133,62 +138,74 @@ fun AutoPostoTopBar(
                     IconButton(
                         onClick = onBackClick,
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(SurfaceContainerHigh)
                             .testTag("topbar_back_button")
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Voltar",
-                            tint = OnSurface
+                            tint = OnSurface,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                 }
 
-                // Brand Emblem Badge
-                Box(
+                // Brand Emblem Badge with Official Auto Posto 01 Logo
+                Image(
+                    painter = painterResource(id = R.drawable.img_auto_posto_logo),
+                    contentDescription = "Logo Auto Posto 01",
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(42.dp)
                         .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(listOf(Color(0xFF0F2F20), Color(0xFF071810)))
-                        )
-                        .border(1.5.dp, PrimaryEmerald, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LocalGasStation,
-                        contentDescription = "Logo Auto Posto 01",
-                        tint = SecondaryGold,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                )
 
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "POSTO 01",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = OnSurface,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 0.5.sp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(SecondaryGold)
+                                .padding(horizontal = 5.dp, vertical = 1.dp)
+                        ) {
+                            Text(
+                                text = "VIP",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = OnSecondaryGold,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 9.sp
+                            )
+                        }
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
                                 .size(6.dp)
                                 .clip(CircleShape)
-                                .background(SecondaryGold)
+                                .background(PrimaryEmerald)
                         )
-                        Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "CLUBE 01",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = SecondaryGold,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.sp
+                            text = "8 Bicos Ativos • Pista 24h",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = PrimaryEmerald,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = OnSurface,
-                        fontWeight = FontWeight.Bold
-                    )
                 }
             }
 
@@ -198,21 +215,24 @@ fun AutoPostoTopBar(
                     IconButton(
                         onClick = onNotificationsClick,
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(SurfaceContainerHigh)
                             .testTag("topbar_notifications_button")
                     ) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "Notificações",
-                            tint = if (unreadNotifCount > 0) SecondaryGold else OnSurfaceVariant
+                            tint = if (unreadNotifCount > 0) SecondaryGold else OnSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                     if (unreadNotifCount > 0) {
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(top = 4.dp, end = 4.dp)
-                                .size(18.dp)
+                                .padding(top = 2.dp, end = 2.dp)
+                                .size(16.dp)
                                 .clip(CircleShape)
                                 .background(SecondaryGold),
                             contentAlignment = Alignment.Center
@@ -221,21 +241,22 @@ fun AutoPostoTopBar(
                                 text = unreadNotifCount.toString(),
                                 color = OnSecondaryGold,
                                 style = MaterialTheme.typography.labelSmall,
-                                fontSize = 10.sp,
+                                fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
-                // User Profile Button
+                // User Profile Button with Gold Member Ring
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
-                        .background(PrimaryEmerald)
+                        .background(SurfaceContainerHigh)
+                        .border(1.5.dp, SecondaryGold, CircleShape)
                         .clickable { onProfileClick() }
                         .testTag("topbar_profile_button"),
                     contentAlignment = Alignment.Center
@@ -243,8 +264,8 @@ fun AutoPostoTopBar(
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "Perfil do Usuário",
-                        tint = OnPrimaryEmerald,
-                        modifier = Modifier.size(20.dp)
+                        tint = SecondaryGold,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
@@ -257,43 +278,73 @@ fun AutoPostoBottomBar(
     currentRoute: String,
     onNavigate: (String) -> Unit
 ) {
-    NavigationBar(
-        containerColor = SurfaceDark.copy(alpha = 0.95f),
-        contentColor = OnSurfaceVariant,
-        tonalElevation = 8.dp,
+    // Modern Floating Island Navigation Bar
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .testTag("bottom_navigation_bar")
             .navigationBarsPadding()
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .testTag("bottom_navigation_bar")
     ) {
-        BottomNavItems.forEach { screen ->
-            val isSelected = currentRoute == screen.route
-            NavigationBarItem(
-                selected = isSelected,
-                onClick = { onNavigate(screen.route) },
-                icon = {
-                    Icon(
-                        imageVector = screen.icon,
-                        contentDescription = screen.title,
-                        modifier = Modifier.size(24.dp)
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = SurfaceContainerHigh.copy(alpha = 0.96f),
+            shadowElevation = 12.dp,
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                Brush.horizontalGradient(
+                    listOf(
+                        PrimaryEmerald.copy(alpha = 0.45f),
+                        SecondaryGold.copy(alpha = 0.35f),
+                        PrimaryEmerald.copy(alpha = 0.45f)
                     )
-                },
-                label = {
-                    Text(
-                        text = screen.title,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                    )
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = OnPrimaryEmerald,
-                    selectedTextColor = PrimaryEmerald,
-                    indicatorColor = PrimaryEmerald,
-                    unselectedIconColor = OnSurfaceVariant,
-                    unselectedTextColor = OnSurfaceVariant
-                ),
-                modifier = Modifier.testTag("nav_item_${screen.route}")
-            )
+                )
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                BottomNavItems.forEach { screen ->
+                    val isSelected = currentRoute == screen.route
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(
+                                if (isSelected) PrimaryContainerEmerald.copy(alpha = 0.22f) else Color.Transparent
+                            )
+                            .clickable { onNavigate(screen.route) }
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                            .testTag("nav_item_${screen.route}"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = screen.icon,
+                                contentDescription = screen.title,
+                                tint = if (isSelected) PrimaryEmerald else OnSurfaceVariant,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = screen.title,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (isSelected) PrimaryEmerald else OnSurfaceVariant,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -1002,11 +1053,12 @@ fun PetrosSyncDialog(
                         modifier = Modifier.padding(14.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        ReceiptRow("Status de Conexão", if (syncState.isConnected) "Online (Ativo)" else "Offline", valueColor = PrimaryEmerald)
-                        ReceiptRow("Servidor Petros", syncState.serverHost, isMono = true)
-                        ReceiptRow("Latência / Ping", "${syncState.pingMs} ms", valueColor = TertiaryGreen, isMono = true)
-                        ReceiptRow("Bombas Conectadas", "${syncState.activePumpsCount} bombas ativas")
-                        ReceiptRow("Sincronização", syncState.syncStatus)
+                        ReceiptRow("Status da Pista", if (syncState.isConnected) "Online (Conectado)" else "Offline", valueColor = PrimaryEmerald)
+                        ReceiptRow("Servidor Petros", "Desktop Local (Escritório Barreiras)", isMono = true)
+                        ReceiptRow("Terminais de Pista", "Smart POS Cielo (App Petros)")
+                        ReceiptRow("Operação Caixa", "Individual por Maquininha Cielo")
+                        ReceiptRow("Bombas Conectadas", "${syncState.activePumpsCount} bicos em Barreiras")
+                        ReceiptRow("Convênio Ativo", "Uber / 99 / Táxi (-R$ 0,15/L)", valueColor = SecondaryGold)
                     }
                 }
 
@@ -1155,6 +1207,7 @@ fun AlcoholVsGasCalculatorDialog(
 @Composable
 fun BookingServiceDialog(
     serviceName: String,
+    vehiclePlate: String = "",
     onConfirm: (day: String, time: String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -1195,7 +1248,7 @@ fun BookingServiceDialog(
                 }
 
                 Text(
-                    text = "Escolha o melhor horário na Unidade 01 (Matriz Jardins). Sem filas, atendimento prioritário para membros.",
+                    text = "Escolha o melhor horário na Unidade 01 (Matriz Clériston Andrade). Sem filas, atendimento prioritário para membros.",
                     style = MaterialTheme.typography.bodySmall,
                     color = OnSurfaceVariant
                 )
@@ -1295,7 +1348,13 @@ fun BookingServiceDialog(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(text = "Veículo:", style = MaterialTheme.typography.bodySmall, color = OnSurface)
                         }
-                        Text(text = "BRA-2E19 (Civic 2021)", style = MaterialTheme.typography.bodySmall, color = SecondaryGold, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        Text(
+                            text = if (vehiclePlate.isNotBlank()) vehiclePlate else "A informar na pista",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SecondaryGold,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        )
                     }
                 }
 

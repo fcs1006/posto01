@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "466576787682",
+    "project_id": "posto01-main",
+    "storage_bucket": "posto01-main.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:466576787682:android:022e71ea1d784cb1c7f6bb",
+        "android_client_info": {
+          "package_name": "com.aistudio.autoposto01.vkmzqp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "466576787682-81u7fgs529jjfv70hul57uojgifadkg0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aistudio.autoposto01.vkmzqp",
+            "certificate_hash": "e2937d9321f637bdb3890ca062b5a57da108ab6c"
+          }
+        },
+        {
+          "client_id": "466576787682-r853hbpa551h8qlp662hfl04uqm0pf8f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBYP9eU2vMzmDKec41ihVzWt1twoZxJkA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "466576787682-r853hbpa551h8qlp662hfl04uqm0pf8f.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
