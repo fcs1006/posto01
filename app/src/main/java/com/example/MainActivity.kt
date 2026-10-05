@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -106,6 +107,18 @@ fun MainAppRoot(
         mutableStateOf(if (uiState.isAuthenticated) Screen.Home.route else Screen.Login.route)
     }
     val context = LocalContext.current
+
+    if (uiState.isSessionRestoring) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(SurfaceDark),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = PrimaryEmerald)
+        }
+        return
+    }
 
     // Lock non-authenticated users to LoginScreen (No guest mode)
     LaunchedEffect(uiState.isAuthenticated, uiState.needsProfileCompletion) {

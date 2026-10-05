@@ -78,6 +78,7 @@ data class MainUiState(
     val showGoogleSignInDialog: Boolean = false,
     val isAuthenticated: Boolean = false,
     val needsProfileCompletion: Boolean = false,
+    val isSessionRestoring: Boolean = true,
     val toastMessage: String? = null
 )
 
@@ -200,7 +201,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun observeDatabase() {
         viewModelScope.launch {
             repository.getProfileFlow().collect { profile ->
-                _uiState.update { it.copy(userProfile = profile) }
+                val isAuth = profile.name.isNotBlank() && (profile.cpf.isNotBlank() || profile.email.isNotBlank())
+                val needsCompletion = isAuth && profile.cpf.isBlank()
+                _uiState.update {
+                    it.copy(
+                        userProfile = profile,
+                        isAuthenticated = isAuth,
+                        needsProfileCompletion = needsCompletion,
+                        isSessionRestoring = false
+                    )
+                }
             }
         }
 
