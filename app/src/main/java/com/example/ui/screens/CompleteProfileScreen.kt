@@ -39,9 +39,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,6 +56,10 @@ import com.example.ui.theme.PrimaryContainerEmerald
 import com.example.ui.theme.PrimaryEmerald
 import com.example.ui.theme.SecondaryGold
 import com.example.ui.theme.SurfaceDark
+
+private const val CPF_MASK = "###.###.###-##"
+private const val PHONE_MASK = "(##) #####-####"
+private const val DATE_MASK = "##/##/####"
 
 @Composable
 fun CompleteProfileScreen(
@@ -70,10 +77,9 @@ fun CompleteProfileScreen(
     var showConfirmPassword by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val cpfDigits = cpf.filter { it.isDigit() }
     val isNameValid = name.isNotBlank()
-    val isPhoneValid = phone.filter { it.isDigit() }.length >= 10
-    val isCpfValid = isValidCpf(cpfDigits)
+    val isPhoneValid = phone.length >= 10
+    val isCpfValid = isValidCpf(cpf)
     val isBirthDateValid = isValidBirthDate(birthDate)
     val isPasswordValid = password.length >= 6
     val isConfirmValid = confirmPassword.isNotBlank() && confirmPassword == password
@@ -91,7 +97,6 @@ fun CompleteProfileScreen(
     ) {
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Header
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = "Complete seu cadastro",
@@ -107,7 +112,6 @@ fun CompleteProfileScreen(
             )
         }
 
-        // E-mail (read-only, veio do Google)
         OutlinedTextField(
             value = userProfile.email,
             onValueChange = {},
@@ -119,7 +123,6 @@ fun CompleteProfileScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Nome (editável)
         OutlinedTextField(
             value = name,
             onValueChange = { name = it; errorMessage = null },
@@ -129,45 +132,44 @@ fun CompleteProfileScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Telefone
         OutlinedTextField(
             value = phone,
-            onValueChange = { input -> phone = maskPhone(input); errorMessage = null },
+            onValueChange = { input -> phone = input.filter { it.isDigit() }.take(11); errorMessage = null },
             label = { Text("Telefone / WhatsApp", fontSize = 12.sp) },
             leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = PrimaryEmerald) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            visualTransformation = MaskVisualTransformation(PHONE_MASK),
             singleLine = true,
             placeholder = { Text("(00) 00000-0000") },
             modifier = Modifier.fillMaxWidth()
         )
 
-        // CPF
         OutlinedTextField(
             value = cpf,
-            onValueChange = { input -> cpf = maskCpf(input); errorMessage = null },
+            onValueChange = { input -> cpf = input.filter { it.isDigit() }.take(11); errorMessage = null },
             label = { Text("CPF (usado na bomba para desconto)", fontSize = 12.sp) },
             leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null, tint = SecondaryGold) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            visualTransformation = MaskVisualTransformation(CPF_MASK),
             singleLine = true,
             placeholder = { Text("000.000.000-00") },
             isError = cpf.isNotBlank() && !isCpfValid,
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Data de nascimento
         OutlinedTextField(
             value = birthDate,
-            onValueChange = { input -> birthDate = maskDate(input); errorMessage = null },
+            onValueChange = { input -> birthDate = input.filter { it.isDigit() }.take(8); errorMessage = null },
             label = { Text("Data de nascimento", fontSize = 12.sp) },
             leadingIcon = { Icon(Icons.Default.Cake, contentDescription = null, tint = PrimaryEmerald) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            visualTransformation = MaskVisualTransformation(DATE_MASK),
             singleLine = true,
             placeholder = { Text("dd/mm/aaaa") },
             isError = birthDate.isNotBlank() && !isBirthDateValid,
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Senha
         OutlinedTextField(
             value = password,
             onValueChange = { password = it; errorMessage = null },
@@ -188,7 +190,6 @@ fun CompleteProfileScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Confirmação de senha
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it; errorMessage = null },
@@ -220,7 +221,6 @@ fun CompleteProfileScreen(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Botão concluir
         Button(
             onClick = {
                 when {
@@ -232,7 +232,13 @@ fun CompleteProfileScreen(
                     !isConfirmValid -> errorMessage = "As senhas não coincidem."
                     else -> {
                         errorMessage = null
-                        onComplete(name.trim(), phone.trim(), cpf.trim(), birthDate.trim(), password)
+                        onComplete(
+                            name.trim(),
+                            applyMask(phone, PHONE_MASK),
+                            applyMask(cpf, CPF_MASK),
+                            applyMask(birthDate, DATE_MASK),
+                            password
+                        )
                     }
                 }
             },
@@ -253,7 +259,6 @@ fun CompleteProfileScreen(
             )
         }
 
-        // Sair (não é "pular" — encerra o login)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
@@ -267,36 +272,43 @@ fun CompleteProfileScreen(
 
 // ---------- Helpers ----------
 
-private fun maskCpf(input: String): String {
-    val digits = input.filter { it.isDigit() }.take(11)
-    return buildString {
-        digits.forEachIndexed { i, c ->
-            append(c)
-            if (i == 2 || i == 5) append('.')
-            if (i == 8) append('-')
+private fun applyMask(digits: String, mask: String): String {
+    var digitIndex = 0
+    val out = StringBuilder()
+    for (ch in mask) {
+        if (digitIndex >= digits.length) break
+        if (ch == '#') {
+            out.append(digits[digitIndex])
+            digitIndex++
+        } else {
+            out.append(ch)
         }
     }
+    return out.toString()
 }
 
-private fun maskPhone(input: String): String {
-    val digits = input.filter { it.isDigit() }.take(11)
-    return buildString {
-        digits.forEachIndexed { i, c ->
-            if (i == 0) append('(')
-            append(c)
-            if (i == 1) append(") ")
-            if (i == 6) append('-')
-        }
-    }
-}
+private class MaskVisualTransformation(private val mask: String) : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val digits = text.text.filter { it.isDigit() }
+        val formatted = applyMask(digits, mask)
 
-private fun maskDate(input: String): String {
-    val digits = input.filter { it.isDigit() }.take(8)
-    return buildString {
-        digits.forEachIndexed { i, c ->
-            append(c)
-            if (i == 1 || i == 3) append('/')
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                var count = 0
+                for (i in formatted.indices) {
+                    if (formatted[i].isDigit()) {
+                        if (count == offset) return i
+                        count++
+                    }
+                }
+                return formatted.length
+            }
+
+            override fun transformedToOriginal(offset: Int): Int {
+                return formatted.take(offset).count { it.isDigit() }
+            }
         }
+        return TransformedText(AnnotatedString(formatted), offsetMapping)
     }
 }
 
@@ -320,16 +332,14 @@ private fun isValidCpf(cpf: String): Boolean {
     return d1 == (cpf[9] - '0') && d2 == (cpf[10] - '0')
 }
 
-private fun isValidBirthDate(date: String): Boolean {
-    val parts = date.split('/')
-    if (parts.size != 3) return false
-    val day = parts[0].toIntOrNull() ?: return false
-    val month = parts[1].toIntOrNull() ?: return false
-    val year = parts[2].toIntOrNull() ?: return false
+private fun isValidBirthDate(digits: String): Boolean {
+    if (digits.length != 8) return false
+    val day = digits.substring(0, 2).toIntOrNull() ?: return false
+    val month = digits.substring(2, 4).toIntOrNull() ?: return false
+    val year = digits.substring(4, 8).toIntOrNull() ?: return false
     if (month !in 1..12) return false
     if (year !in 1900..2026) return false
     if (day !in 1..31) return false
-    // Validação básica de dias por mês
     val maxDay = when (month) {
         2 -> if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) 29 else 28
         4, 6, 9, 11 -> 30
