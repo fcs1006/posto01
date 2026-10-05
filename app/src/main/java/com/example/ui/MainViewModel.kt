@@ -2,6 +2,7 @@ package com.example.ui
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -20,12 +21,14 @@ import com.example.data.repository.PetrosRepository
 import com.example.notification.NotificationHelper
 import com.example.security.BiometricHelper
 import com.example.security.GoogleAuthHelper
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 data class MainUiState(
     val userProfile: UserProfile = UserProfile(
@@ -74,6 +77,7 @@ data class MainUiState(
     val showAdminManagerDialog: Boolean = false,
     val showGoogleSignInDialog: Boolean = false,
     val isAuthenticated: Boolean = false,
+    val needsProfileCompletion: Boolean = false,
     val toastMessage: String? = null
 )
 
@@ -401,8 +405,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         pointsBalance = if (_uiState.value.userProfile.pointsBalance == 0) 250 else _uiState.value.userProfile.pointsBalance
                     )
                     repository.saveProfile(updated)
-                    _uiState.update { it.copy(isAuthenticated = true, userProfile = updated, showGoogleSignInDialog = false) }
-                    showToast(if (data.firebaseAuthenticated) "Conectado com sucesso via Google (${data.email})" else "Google conectado localmente — configure o Firebase (google-services.json) para autenticação real.")
+                    val needsCompletion = updated.cpf.isBlank() || updated.birthDate.isBlank() || updated.phone.isBlank()
+                    _uiState.update {
+                        it.copy(
+                            isAuthenticated = true,
+                            needsProfileCompletion = needsCompletion,
+                            userProfile = updated,
+                            showGoogleSignInDialog = false
+                        )
+                    }
+                    if (needsCompletion) {
+                        showToast("Complete seu cadastro para continuar.")
+                    } else {
+                        showToast(if (data.firebaseAuthenticated) "Conectado com sucesso via Google (${data.email})" else "Google conectado localmente.")
+                    }
                     onComplete()
                 }
             } else {
@@ -439,6 +455,42 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setShowGoogleSignInDialog(show: Boolean) {
         _uiState.update { it.copy(showGoogleSignInDialog = show) }
+    }
+
+    fun completeProfile(
+        name: String,
+        phone: String,
+        cpf: String,
+        birthDate: String,
+        password: String,
+        onComplete: () -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            // Define/atualiza a senha no Firebase Auth (melhor esforço) para permitir
+            // login futuro por e-mail + senha usando o mesmo e-mail do Google.
+            try {
+                FirebaseAuth.getInstance().currentUser?.updatePassword(password)?.await()
+            } catch (e: Exception) {
+                Log.w("MainViewModel", "Não foi possível definir a senha: ${e.message}")
+            }
+
+            val updated = _uiState.value.userProfile.copy(
+                name = name.trim(),
+                phone = phone.trim(),
+                cpf = cpf.trim(),
+                birthDate = birthDate.trim()
+            )
+            repository.saveProfile(updated)
+            _uiState.update {
+                it.copy(
+                    userProfile = updated,
+                    isAuthenticated = true,
+                    needsProfileCompletion = false
+                )
+            }
+            showToast("Cadastro concluído! Bem-vindo ao Clube 01, ${updated.name}!")
+            onComplete()
+        }
     }
 
     fun triggerGoogleSignUp(context: Context, onComplete: () -> Unit = {}) {
@@ -509,6 +561,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.update {
                 it.copy(
                     isAuthenticated = false,
+                    needsProfileCompletion = false,
                     userProfile = UserProfile(
                         name = "",
                         email = "",

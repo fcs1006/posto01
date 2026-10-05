@@ -57,7 +57,8 @@ class PetrosRepository(
                     vehiclePlate = "",
                     vehicleModel = "",
                     habitualFuel = "Gasolina Comum",
-                    isBlackMember = false
+                    isBlackMember = false,
+                    birthDate = ""
                 )
             )
         }
@@ -95,7 +96,8 @@ class PetrosRepository(
                 vehiclePlate = "",
                 vehicleModel = "",
                 habitualFuel = "Gasolina Comum",
-                isBlackMember = false
+                isBlackMember = false,
+                birthDate = ""
             )
         )
     }
@@ -115,7 +117,8 @@ class PetrosRepository(
                     vehiclePlate = entity.vehiclePlate,
                     vehicleModel = entity.vehicleModel,
                     habitualFuel = entity.habitualFuel,
-                    isBlackMember = entity.isBlackMember
+                    isBlackMember = entity.isBlackMember,
+                    birthDate = entity.birthDate
                 )
             } else {
                 UserProfile(
@@ -223,7 +226,8 @@ class PetrosRepository(
                 vehiclePlate = profile.vehiclePlate,
                 vehicleModel = profile.vehicleModel,
                 habitualFuel = profile.habitualFuel,
-                isBlackMember = profile.isBlackMember
+                isBlackMember = profile.isBlackMember,
+                birthDate = profile.birthDate
             )
         )
     }

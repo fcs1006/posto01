@@ -17,6 +17,7 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector)
     object Wallet : Screen("wallet", "Carteira", Icons.Default.AccountBalanceWallet)
     object History : Screen("history", "Histórico", Icons.AutoMirrored.Filled.ReceiptLong)
     object Login : Screen("login", "Entrar", Icons.Default.CardMembership)
+    object CompleteProfile : Screen("complete_profile", "Complete seu Cadastro", Icons.Default.CardMembership)
 }
 
 val BottomNavItems = listOf(

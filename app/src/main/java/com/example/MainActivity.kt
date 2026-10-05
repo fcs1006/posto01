@@ -63,6 +63,7 @@ import com.example.ui.components.PixPaymentSheet
 import com.example.ui.components.ReceiptDetailsDialog
 import com.example.ui.navigation.Screen
 import com.example.ui.screens.ClubeScreen
+import com.example.ui.screens.CompleteProfileScreen
 import com.example.ui.screens.HistoryScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LoginScreen
@@ -107,10 +108,12 @@ fun MainAppRoot(
     val context = LocalContext.current
 
     // Lock non-authenticated users to LoginScreen (No guest mode)
-    LaunchedEffect(uiState.isAuthenticated) {
+    LaunchedEffect(uiState.isAuthenticated, uiState.needsProfileCompletion) {
         if (!uiState.isAuthenticated) {
             currentRoute = Screen.Login.route
-        } else if (currentRoute == Screen.Login.route) {
+        } else if (uiState.needsProfileCompletion) {
+            currentRoute = Screen.CompleteProfile.route
+        } else if (currentRoute == Screen.Login.route || currentRoute == Screen.CompleteProfile.route) {
             currentRoute = Screen.Home.route
         }
     }
@@ -118,6 +121,8 @@ fun MainAppRoot(
     BackHandler(enabled = true) {
         if (!uiState.isAuthenticated) {
             activity.finish()
+        } else if (currentRoute == Screen.CompleteProfile.route) {
+            viewModel.showToast("Conclua seu cadastro para continuar.")
         } else {
             currentRoute = when (currentRoute) {
                 Screen.History.route -> Screen.Wallet.route
@@ -142,7 +147,7 @@ fun MainAppRoot(
 
     Scaffold(
         topBar = {
-            if (currentRoute != Screen.Login.route) {
+            if (currentRoute != Screen.Login.route && currentRoute != Screen.CompleteProfile.route) {
                 val title = when (currentRoute) {
                     Screen.Stations.route -> "Postos"
                     Screen.Store.route -> "Loja"
@@ -163,7 +168,7 @@ fun MainAppRoot(
             }
         },
         bottomBar = {
-            if (currentRoute != Screen.Login.route) {
+            if (currentRoute != Screen.Login.route && currentRoute != Screen.CompleteProfile.route) {
                 AutoPostoBottomBar(
                     currentRoute = currentRoute,
                     onNavigate = { route -> currentRoute = route }
@@ -255,6 +260,21 @@ fun MainAppRoot(
                             viewModel.triggerBiometricLogin(activity) {
                                 currentRoute = Screen.Home.route
                             }
+                        }
+                    )
+                }
+
+                Screen.CompleteProfile.route -> {
+                    CompleteProfileScreen(
+                        userProfile = uiState.userProfile,
+                        onComplete = { name, phone, cpf, birthDate, password ->
+                            viewModel.completeProfile(name, phone, cpf, birthDate, password) {
+                                currentRoute = Screen.Home.route
+                            }
+                        },
+                        onExit = {
+                            viewModel.logout()
+                            currentRoute = Screen.Login.route
                         }
                     )
                 }

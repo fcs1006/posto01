@@ -110,7 +110,8 @@ data class UserProfile(
     val vehicleModel: String,
     val habitualFuel: String,
     val isBlackMember: Boolean = true,
-    val photoUrl: String = ""
+    val photoUrl: String = "",
+    val birthDate: String = ""
 )
 
 data class PaymentCard(

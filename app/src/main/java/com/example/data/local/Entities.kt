@@ -64,5 +64,6 @@ data class LoyaltyProfileEntity(
     val vehiclePlate: String,
     val vehicleModel: String,
     val habitualFuel: String,
-    val isBlackMember: Boolean
+    val isBlackMember: Boolean,
+    val birthDate: String
 )
