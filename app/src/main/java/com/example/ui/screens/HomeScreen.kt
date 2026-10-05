@@ -98,8 +98,7 @@ fun HomeScreen(
     onNavigateToStore: () -> Unit,
     onNavigateToClube: () -> Unit,
     onOpenCalculator: () -> Unit,
-    onOpenBooking: (String) -> Unit,
-    onOpenAdminManager: () -> Unit = {}
+    onOpenBooking: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -528,40 +527,6 @@ fun HomeScreen(
                     )
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = SurfaceContainerHigh,
-                    modifier = Modifier
-                        .clickable { onOpenAdminManager() }
-                        .testTag("firestore_admin_badge")
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(PrimaryEmerald)
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            text = "Ao Vivo • Firestore",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = PrimaryEmerald,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Editar Preços",
-                            tint = PrimaryEmerald,
-                            modifier = Modifier.size(12.dp)
-                        )
-                    }
-                }
             }
 
             // Totem Container

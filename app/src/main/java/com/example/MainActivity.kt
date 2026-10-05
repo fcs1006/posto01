@@ -53,7 +53,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.MainViewModel
 import com.example.ui.components.AddCardDialog
-import com.example.ui.components.AdminManagerDialog
 import com.example.ui.components.AlcoholVsGasCalculatorDialog
 import com.example.ui.components.AutoPostoBottomBar
 import com.example.ui.components.AutoPostoTopBar
@@ -212,8 +211,7 @@ fun MainAppRoot(
                         onNavigateToStore = { currentRoute = Screen.Store.route },
                         onNavigateToClube = { currentRoute = Screen.Clube.route },
                         onOpenCalculator = { viewModel.setShowAlcoholGasCalculator(true) },
-                        onOpenBooking = { service -> viewModel.openBookingDialog(service) },
-                        onOpenAdminManager = { viewModel.setShowAdminManagerDialog(true) }
+                        onOpenBooking = { service -> viewModel.openBookingDialog(service) }
                     )
                 }
 
@@ -502,23 +500,6 @@ fun MainAppRoot(
                 }
             }
         }
-    }
-
-    if (uiState.showAdminManagerDialog) {
-        AdminManagerDialog(
-            fuelPrices = uiState.fuelPrices,
-            promotions = uiState.promotions,
-            onUpdateFuelPrice = { id, pump, club ->
-                viewModel.updateFuelPrice(id, pump, club)
-            },
-            onSavePromotion = { promo ->
-                viewModel.savePromotion(promo)
-            },
-            onTogglePromotion = { id, active ->
-                viewModel.togglePromotion(id, active)
-            },
-            onDismiss = { viewModel.setShowAdminManagerDialog(false) }
-        )
     }
 
     if (uiState.showGoogleSignInDialog) {

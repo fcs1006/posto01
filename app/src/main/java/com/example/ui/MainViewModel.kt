@@ -74,7 +74,6 @@ data class MainUiState(
     val showBookingDialog: Boolean = false,
     val bookingServiceName: String = "Pit Stop Troca de Óleo",
     val promotions: List<PromotionItem> = emptyList(),
-    val showAdminManagerDialog: Boolean = false,
     val showGoogleSignInDialog: Boolean = false,
     val isAuthenticated: Boolean = false,
     val needsProfileCompletion: Boolean = false,
@@ -96,6 +95,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         loadInitialData()
         observeDatabase()
         observeFirestore()
+        restoreFromFirestore()
+    }
+
+    private fun currentUid(): String? = try {
+        FirebaseAuth.getInstance().currentUser?.uid
+    } catch (e: Exception) {
+        null
+    }
+
+    private fun persistToFirestore(profile: UserProfile) {
+        val uid = currentUid() ?: return
+        viewModelScope.launch {
+            firestoreService.saveUserProfile(uid, profile)
+        }
+    }
+
+    private fun restoreFromFirestore() {
+        viewModelScope.launch {
+            val uid = currentUid() ?: return@launch
+            val remote = firestoreService.getUserProfileOnce(uid) ?: return@launch
+            if (remote.name.isNotBlank() || remote.email.isNotBlank()) {
+                repository.saveProfile(remote)
+            }
+        }
     }
 
     private fun observeFirestore() {
@@ -143,39 +166,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
-    }
-
-    fun updateFuelPrice(fuelId: String, pumpPrice: Double, clubPrice: Double) {
-        viewModelScope.launch {
-            val result = firestoreService.updateFuelPrice(fuelId, pumpPrice, clubPrice)
-            if (result.isSuccess) {
-                showToast("Preço atualizado em tempo real no Firestore!")
-            } else {
-                showToast("Erro ao sincronizar com Firestore.")
-            }
-        }
-    }
-
-    fun savePromotion(promotion: PromotionItem) {
-        viewModelScope.launch {
-            val result = firestoreService.savePromotion(promotion)
-            if (result.isSuccess) {
-                showToast("Promoção publicada com sucesso no Firestore!")
-            } else {
-                showToast("Erro ao salvar promoção.")
-            }
-        }
-    }
-
-    fun togglePromotion(promoId: String, isActive: Boolean) {
-        viewModelScope.launch {
-            firestoreService.togglePromotion(promoId, isActive)
-            showToast(if (isActive) "Campanha ativada no app!" else "Campanha desativada.")
-        }
-    }
-
-    fun setShowAdminManagerDialog(show: Boolean) {
-        _uiState.update { it.copy(showAdminManagerDialog = show) }
     }
 
     private fun loadInitialData() {
@@ -384,6 +374,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 tier = if (name.isNotBlank() || cpf.isNotBlank()) "Membro Clube 01" else "Visitante"
             )
             repository.saveProfile(updated)
+            persistToFirestore(updated)
             showToast("Cadastro no Clube 01 atualizado! Descontos liberados na bomba.")
             NotificationHelper.showPromoNotification(
                 getApplication(),
@@ -415,6 +406,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         pointsBalance = if (_uiState.value.userProfile.pointsBalance == 0) 250 else _uiState.value.userProfile.pointsBalance
                     )
                     repository.saveProfile(updated)
+                    persistToFirestore(updated)
                     val needsCompletion = updated.cpf.isBlank() || updated.birthDate.isBlank() || updated.phone.isBlank()
                     _uiState.update {
                         it.copy(
@@ -491,6 +483,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 birthDate = birthDate.trim()
             )
             repository.saveProfile(updated)
+            persistToFirestore(updated)
             _uiState.update {
                 it.copy(
                     userProfile = updated,
@@ -559,6 +552,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 cashbackBalance = if (isNewAccount) currentCashback + 5.0 else currentCashback
             )
             repository.saveProfile(updated)
+            persistToFirestore(updated)
             _uiState.update { it.copy(isAuthenticated = true, userProfile = updated) }
             showToast(if (isNewAccount) "Bem-vindo ao Clube 01, $name! +500 Pontos creditados." else "Bem-vindo de volta ao Clube 01, $name!")
             onComplete()
@@ -567,6 +561,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun logout() {
         viewModelScope.launch {
+            try { FirebaseAuth.getInstance().signOut() } catch (e: Exception) { Log.w("MainViewModel", "signOut: ${e.message}") }
             repository.clearAllMockData()
             _uiState.update {
                 it.copy(

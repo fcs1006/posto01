@@ -5,6 +5,7 @@ import android.util.Log
 import com.example.data.model.FuelPrice
 import com.example.data.model.PromotionItem
 import com.example.data.model.Station
+import com.example.data.model.UserProfile
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -356,6 +357,69 @@ class FirestoreService(private val context: Context) {
         }
     }
 
+    /**
+     * Salva o perfil do usuário no Firestore (users/{uid}).
+     * Permite recuperar o cadastro em outro aparelho.
+     */
+    suspend fun saveUserProfile(uid: String, profile: UserProfile): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val db = firestoreInstance ?: return@withContext Result.failure(Exception("Firestore indisponível"))
+            val data = mapOf(
+                "name" to profile.name,
+                "email" to profile.email,
+                "cpf" to profile.cpf,
+                "phone" to profile.phone,
+                "birthDate" to profile.birthDate,
+                "tier" to profile.tier,
+                "pointsBalance" to profile.pointsBalance,
+                "cashbackBalance" to profile.cashbackBalance,
+                "monthlySavings" to profile.monthlySavings,
+                "vehiclePlate" to profile.vehiclePlate,
+                "vehicleModel" to profile.vehicleModel,
+                "habitualFuel" to profile.habitualFuel,
+                "isBlackMember" to profile.isBlackMember,
+                "photoUrl" to profile.photoUrl,
+                "updatedAt" to System.currentTimeMillis()
+            )
+            db.collection(COLLECTION_USERS).document(uid).set(data, SetOptions.merge()).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirestoreService", "Error saving user profile: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Carrega o perfil do usuário do Firestore (users/{uid}).
+     * Retorna null se não existir ou se o Firestore estiver indisponível.
+     */
+    suspend fun getUserProfileOnce(uid: String): UserProfile? = withContext(Dispatchers.IO) {
+        try {
+            val db = firestoreInstance ?: return@withContext null
+            val doc = db.collection(COLLECTION_USERS).document(uid).get().await()
+            val data = doc.data ?: return@withContext null
+            UserProfile(
+                name = data["name"] as? String ?: "",
+                email = data["email"] as? String ?: "",
+                cpf = data["cpf"] as? String ?: "",
+                phone = data["phone"] as? String ?: "",
+                birthDate = data["birthDate"] as? String ?: "",
+                tier = data["tier"] as? String ?: "Visitante",
+                pointsBalance = (data["pointsBalance"] as? Number)?.toInt() ?: 0,
+                cashbackBalance = (data["cashbackBalance"] as? Number)?.toDouble() ?: 0.0,
+                monthlySavings = (data["monthlySavings"] as? Number)?.toDouble() ?: 0.0,
+                vehiclePlate = data["vehiclePlate"] as? String ?: "",
+                vehicleModel = data["vehicleModel"] as? String ?: "",
+                habitualFuel = data["habitualFuel"] as? String ?: "Gasolina Comum",
+                isBlackMember = data["isBlackMember"] as? Boolean ?: false,
+                photoUrl = data["photoUrl"] as? String ?: ""
+            )
+        } catch (e: Exception) {
+            Log.e("FirestoreService", "Error loading user profile: ${e.message}")
+            null
+        }
+    }
+
     private suspend fun seedInitialFuelsToFirestore() {
         val db = firestoreInstance ?: return
         try {
@@ -405,6 +469,7 @@ class FirestoreService(private val context: Context) {
         const val COLLECTION_FUELS = "fuel_prices"
         const val COLLECTION_PROMOTIONS = "promotions"
         const val COLLECTION_STATIONS = "stations"
+        const val COLLECTION_USERS = "users"
 
         fun defaultStations(): List<Station> {
             val fuels = defaultFuelPrices()
