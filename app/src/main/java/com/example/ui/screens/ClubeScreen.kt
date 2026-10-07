@@ -418,12 +418,21 @@ fun ClubeScreen(
                             .height(46.dp)
                             .testTag("google_signin_button")
                     ) {
-                        Text(
-                            text = if (userProfile.email.isNotBlank()) "Trocar Conta Google" else "Entrar com Google (Real)",
-                            color = OnPrimaryEmerald,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_google_logo),
+                                contentDescription = null,
+                                tint = Color.Unspecified,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (userProfile.email.isNotBlank()) "Trocar Conta Google" else "Entrar com Google",
+                                color = OnPrimaryEmerald,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
                     }
 
                     if (userProfile.email.isNotBlank() || userProfile.cpf.isNotBlank()) {
