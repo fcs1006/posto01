@@ -119,13 +119,12 @@ fun AutoPostoTopBar(
         color = SurfaceDark.copy(alpha = 0.98f),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x184EDEA3)),
         shadowElevation = 8.dp,
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding()
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
