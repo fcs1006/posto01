@@ -68,13 +68,13 @@ val Typography = Typography(
         fontWeight = FontWeight.Bold,
         fontSize = 12.sp,
         lineHeight = 16.sp,
-        letterSpacing = 0.5.sp
+        letterSpacing = 0.sp
     ),
     labelSmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.ExtraBold,
         fontSize = 11.sp,
         lineHeight = 15.sp,
-        letterSpacing = 0.8.sp
+        letterSpacing = 0.sp
     )
 )
