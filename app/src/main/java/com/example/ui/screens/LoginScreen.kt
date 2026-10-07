@@ -556,7 +556,7 @@ fun LoginScreen(
             ) {
                 Button(
                     onClick = {
-                        loginViewModel.signUpWithGoogle(context) { name, cpf, email ->
+                        loginViewModel.signUpWithGoogle(context) { name: String, cpf: String, email: String, _: Boolean ->
                             onLoginSuccess(name, cpf, email)
                         }
                     },

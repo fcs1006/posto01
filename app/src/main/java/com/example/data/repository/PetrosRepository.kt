@@ -5,6 +5,7 @@ import com.example.data.local.FuelTransactionEntity
 import com.example.data.local.LoyaltyProfileEntity
 import com.example.data.local.NotificationEntity
 import com.example.data.local.PaymentCardEntity
+import com.example.data.local.RegisteredAccountEntity
 import com.example.data.model.FuelPrice
 import com.example.data.model.PaymentCard
 import com.example.data.model.PetrosSyncState
@@ -35,6 +36,27 @@ class PetrosRepository(
     private val cardDao = database.cardDao()
     private val notificationDao = database.notificationDao()
     private val loyaltyDao = database.loyaltyDao()
+    private val accountDao = database.registeredAccountDao()
+
+    suspend fun isEmailRegistered(email: String): Boolean = withContext(Dispatchers.IO) {
+        val cleanEmail = email.trim().lowercase()
+        if (cleanEmail.isBlank()) return@withContext false
+        accountDao.isEmailRegistered(cleanEmail)
+    }
+
+    suspend fun registerAccount(email: String, name: String, cpf: String, phone: String) = withContext(Dispatchers.IO) {
+        val cleanEmail = email.trim().lowercase()
+        if (cleanEmail.isNotBlank()) {
+            accountDao.insertAccount(
+                RegisteredAccountEntity(
+                    email = cleanEmail,
+                    name = name,
+                    cpf = cpf,
+                    phone = phone
+                )
+            )
+        }
+    }
 
     suspend fun initializeDefaultData() = withContext(Dispatchers.IO) {
         // Clear all mock cards and mock transactions so the app starts 100% clean

@@ -72,3 +72,18 @@ interface LoyaltyDao {
     @Query("DELETE FROM loyalty_profile")
     suspend fun clearProfile()
 }
+
+@Dao
+interface RegisteredAccountDao {
+    @Query("SELECT * FROM registered_accounts WHERE LOWER(email) = LOWER(:email) LIMIT 1")
+    suspend fun getAccountByEmail(email: String): RegisteredAccountEntity?
+
+    @Query("SELECT EXISTS(SELECT 1 FROM registered_accounts WHERE LOWER(email) = LOWER(:email))")
+    suspend fun isEmailRegistered(email: String): Boolean
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAccount(account: RegisteredAccountEntity)
+
+    @Query("SELECT * FROM registered_accounts")
+    fun getAllAccounts(): Flow<List<RegisteredAccountEntity>>
+}

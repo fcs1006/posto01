@@ -10,9 +10,10 @@ import androidx.room.RoomDatabase
         FuelTransactionEntity::class,
         PaymentCardEntity::class,
         NotificationEntity::class,
-        LoyaltyProfileEntity::class
+        LoyaltyProfileEntity::class,
+        RegisteredAccountEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -20,6 +21,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun cardDao(): CardDao
     abstract fun notificationDao(): NotificationDao
     abstract fun loyaltyDao(): LoyaltyDao
+    abstract fun registeredAccountDao(): RegisteredAccountDao
 
     companion object {
         @Volatile

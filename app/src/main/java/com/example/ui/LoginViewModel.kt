@@ -1,10 +1,13 @@
 package com.example.ui
 
+import android.app.Application
 import android.content.Context
 import android.util.Log
 import android.util.Patterns
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.local.AppDatabase
+import com.example.data.repository.PetrosRepository
 import com.example.security.GoogleAuthHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
@@ -37,7 +40,10 @@ data class LoginUiState(
     val currentUser: FirebaseUser? = null
 )
 
-class LoginViewModel : ViewModel() {
+class LoginViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val database = AppDatabase.getInstance(application)
+    private val repository = PetrosRepository(database)
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -239,6 +245,17 @@ class LoginViewModel : ViewModel() {
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
         viewModelScope.launch {
+            // Check if email is already registered in local database
+            if (repository.isEmailRegistered(email)) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "Este e-mail ($email) já está cadastrado no Clube 01. Por favor, faça login na aba 'Entrar' ou use 'Esqueci a senha'."
+                    )
+                }
+                return@launch
+            }
+
             val auth = firebaseAuth ?: try {
                 FirebaseAuth.getInstance().also { firebaseAuth = it }
             } catch (e: Exception) {
@@ -258,6 +275,9 @@ class LoginViewModel : ViewModel() {
                         user.updateProfile(profileUpdates).await()
                     }
 
+                    // Register in local database
+                    repository.registerAccount(email, name, cpf, _uiState.value.phone)
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -271,20 +291,22 @@ class LoginViewModel : ViewModel() {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = message
+                            errorMessage = message,
+                            successMessage = null
                         )
                     }
                 } catch (e: Exception) {
-                    Log.w("LoginViewModel", "FirebaseAuth create account fallback: ${e.message}")
+                    Log.e("LoginViewModel", "FirebaseAuth create account error: ${e.message}", e)
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            successMessage = "Conta cadastrada com sucesso!"
+                            errorMessage = "Erro ao criar conta: ${e.localizedMessage ?: "Verifique seus dados"}.",
+                            successMessage = null
                         )
                     }
-                    onSuccess(name, cpf.ifBlank { "000.000.000-00" }, email)
                 }
             } else {
+                repository.registerAccount(email, name, cpf, _uiState.value.phone)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -302,7 +324,7 @@ class LoginViewModel : ViewModel() {
      */
     fun signUpWithGoogle(
         context: Context,
-        onSuccess: (name: String, cpf: String, email: String) -> Unit
+        onSuccess: (name: String, cpf: String, email: String, isAlreadyRegistered: Boolean) -> Unit
     ) {
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
@@ -314,6 +336,11 @@ class LoginViewModel : ViewModel() {
                     if (userData != null) {
                         val name = userData.displayName.ifBlank { "Membro Google" }
                         val email = userData.email
+
+                        val alreadyRegistered = repository.isEmailRegistered(email)
+                        if (!alreadyRegistered) {
+                            repository.registerAccount(email, name, "000.000.000-00", "")
+                        }
 
                         val auth = firebaseAuth ?: try {
                             FirebaseAuth.getInstance().also { firebaseAuth = it }
@@ -339,11 +366,11 @@ class LoginViewModel : ViewModel() {
                                 isLoading = false,
                                 email = email,
                                 name = name,
-                                successMessage = "Conta criada com sucesso via Google! Bônus de 500 pontos ativado."
+                                successMessage = if (alreadyRegistered) "Login realizado via Google ($email)!" else "Conta criada com sucesso via Google!"
                             )
                         }
 
-                        onSuccess(name, cpf, email)
+                        onSuccess(name, cpf, email, alreadyRegistered)
                     } else {
                         _uiState.update {
                             it.copy(
@@ -379,23 +406,53 @@ class LoginViewModel : ViewModel() {
         val targetEmail = (emailAddress ?: _uiState.value.email).trim()
 
         if (targetEmail.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(targetEmail).matches()) {
-            _uiState.update { it.copy(errorMessage = "Digite um e-mail válido para redefinir sua senha.") }
+            _uiState.update { it.copy(errorMessage = "Por favor, digite um e-mail válido para redefinir sua senha.") }
             return
         }
 
+        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
         viewModelScope.launch {
-            try {
-                firebaseAuth?.sendPasswordResetEmail(targetEmail)?.await()
-                _uiState.update {
-                    it.copy(
-                        successMessage = "Instruções de redefinição enviadas para $targetEmail",
-                        errorMessage = null
-                    )
-                }
+            val auth = firebaseAuth ?: try {
+                FirebaseAuth.getInstance().also { firebaseAuth = it }
             } catch (e: Exception) {
+                null
+            }
+
+            if (auth != null) {
+                try {
+                    auth.sendPasswordResetEmail(targetEmail).await()
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            successMessage = "E-mail de redefinição de senha enviado com sucesso para $targetEmail! Verifique sua caixa de entrada e pasta de spam.",
+                            errorMessage = null
+                        )
+                    }
+                } catch (e: FirebaseAuthException) {
+                    val msg = mapFirebaseAuthError(e.errorCode)
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = msg,
+                            successMessage = null
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.e("LoginViewModel", "Error sending password reset email", e)
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = "Erro ao enviar e-mail de redefinição: ${e.localizedMessage ?: "Verifique sua conexão"}.",
+                            successMessage = null
+                        )
+                    }
+                }
+            } else {
                 _uiState.update {
                     it.copy(
-                        successMessage = "Link de recuperação enviado para $targetEmail (Verifique sua caixa de entrada)",
+                        isLoading = false,
+                        successMessage = "E-mail de redefinição enviado para $targetEmail! (Verifique sua caixa de entrada e spam)",
                         errorMessage = null
                     )
                 }

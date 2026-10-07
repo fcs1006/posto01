@@ -67,3 +67,13 @@ data class LoyaltyProfileEntity(
     val isBlackMember: Boolean,
     val birthDate: String
 )
+
+@Entity(tableName = "registered_accounts")
+data class RegisteredAccountEntity(
+    @PrimaryKey
+    val email: String,
+    val name: String,
+    val cpf: String,
+    val phone: String,
+    val registeredAt: Long = System.currentTimeMillis()
+)
