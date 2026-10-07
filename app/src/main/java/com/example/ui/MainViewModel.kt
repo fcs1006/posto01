@@ -534,20 +534,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loginUser(name: String, cpf: String, email: String, isNewAccount: Boolean = false, onComplete: () -> Unit = {}) {
         viewModelScope.launch {
-            val currentPoints = _uiState.value.userProfile.pointsBalance
-            val currentCashback = _uiState.value.userProfile.cashbackBalance
             val updated = _uiState.value.userProfile.copy(
                 name = name,
                 cpf = cpf,
                 email = email,
-                tier = "Membro Clube 01",
-                pointsBalance = if (isNewAccount) currentPoints + 500 else currentPoints,
-                cashbackBalance = if (isNewAccount) currentCashback + 5.0 else currentCashback
+                tier = "Membro Clube 01"
             )
             repository.saveProfile(updated)
             persistToFirestore(updated)
-            _uiState.update { it.copy(isAuthenticated = true, userProfile = updated) }
-            showToast(if (isNewAccount) "Bem-vindo ao Clube 01, $name! +500 Pontos creditados." else "Bem-vindo de volta ao Clube 01, $name!")
+            val needsCompletion = isNewAccount || updated.cpf.isBlank() || updated.phone.isBlank() || updated.cpf == "000.000.000-00"
+            _uiState.update {
+                it.copy(
+                    isAuthenticated = true,
+                    needsProfileCompletion = needsCompletion,
+                    userProfile = updated
+                )
+            }
+            if (needsCompletion) {
+                showToast("Bem-vindo ao Clube 01! Complete seu cadastro para liberar os descontos na bomba.")
+            } else {
+                showToast("Bem-vindo de volta ao Clube 01, $name!")
+            }
             onComplete()
         }
     }
