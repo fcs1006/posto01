@@ -163,75 +163,7 @@ class FirestoreService(private val context: Context) {
             Log.e("FirestoreService", "Failed to attach promotions listener: ${e.message}")
         }
 
-        // 3. Observe Stations & Coordinates in Real-Time
-        try {
-            stationsListenerRegistration?.remove()
-            stationsListenerRegistration = db.collection(COLLECTION_STATIONS)
-                .addSnapshotListener { snapshots, error ->
-                    if (error != null) {
-                        Log.w("FirestoreService", "Listen error on stations collection: ${error.message}")
-                        return@addSnapshotListener
-                    }
 
-                    if (snapshots != null && !snapshots.isEmpty) {
-                        val hasOldData = snapshots.documents.any { doc ->
-                            val lat = doc.getDouble("latitude") ?: 0.0
-                            val addr = doc.getString("address") ?: ""
-                            val neigh = doc.getString("neighborhood") ?: ""
-                            lat < -20.0 || addr.contains("Brigadeiro") || addr.contains("SP-330") || neigh.contains("São Paulo") || neigh.contains("Jardins")
-                        }
-
-                        if (hasOldData) {
-                            scope.launch {
-                                seedInitialStationsToFirestore()
-                            }
-                        } else {
-                            val stationList = snapshots.documents.mapNotNull { doc ->
-                                try {
-                                    val id = doc.getLong("id")?.toInt() ?: doc.id.filter { it.isDigit() }.toIntOrNull() ?: 1
-                                    Station(
-                                        id = id,
-                                        code = doc.getString("code") ?: "UN-$id",
-                                        name = doc.getString("name") ?: "Auto Posto 01",
-                                        address = doc.getString("address") ?: "",
-                                        neighborhood = doc.getString("neighborhood") ?: "Barreiras - BA",
-                                        distanceKm = doc.getDouble("distanceKm") ?: 0.8,
-                                        travelTimeMinutes = doc.getLong("travelTimeMinutes")?.toInt() ?: 3,
-                                        isOpen24h = doc.getBoolean("isOpen24h") ?: true,
-                                        rating = doc.getDouble("rating") ?: 4.9,
-                                        reviewsCount = doc.getLong("reviewsCount")?.toInt() ?: 350,
-                                        isFavorite = doc.getBoolean("isFavorite") ?: false,
-                                        hasConvenience = doc.getBoolean("hasConvenience") ?: true,
-                                        hasOilChange = doc.getBoolean("hasOilChange") ?: true,
-                                        hasCarWash = doc.getBoolean("hasCarWash") ?: false,
-                                        hasTireCalibration = doc.getBoolean("hasTireCalibration") ?: true,
-                                        hasEvCharging = doc.getBoolean("hasEvCharging") ?: false,
-                                        hasGnv = doc.getBoolean("hasGnv") ?: false,
-                                        phone = doc.getString("phone") ?: "(77) 3611-0101",
-                                        latitude = doc.getDouble("latitude") ?: -12.1459,
-                                        longitude = doc.getDouble("longitude") ?: -44.9928,
-                                        fuels = _fuelPricesFlow.value,
-                                        imageUrl = doc.getString("imageUrl") ?: ""
-                                    )
-                                } catch (e: Exception) {
-                                    Log.e("FirestoreService", "Error parsing station doc ${doc.id}: ${e.message}")
-                                    null
-                                }
-                            }.sortedBy { it.id }
-
-                            if (stationList.isNotEmpty()) {
-                                _stationsFlow.value = stationList
-                            }
-                        }
-                    } else if (snapshots != null && snapshots.isEmpty) {
-                        scope.launch {
-                            seedInitialStationsToFirestore()
-                        }
-                    }
-                }
-        } catch (e: Exception) {
-            Log.e("FirestoreService", "Failed to attach stations listener: ${e.message}")
-        }
     }
 
     /**

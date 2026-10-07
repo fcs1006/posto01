@@ -207,32 +207,6 @@ fun HomeScreen(
                             )
                         }
 
-                        // Right: Live Petros Protocol Pill
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = SurfaceContainerHigh.copy(alpha = 0.6f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryEmerald.copy(alpha = 0.3f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(CircleShape)
-                                        .background(PrimaryEmerald)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "Petros v4.2",
-                                    color = PrimaryEmerald,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = FontFamily.Monospace
-                                )
-                            }
-                        }
                     }
 
                     // Bento Metrics Row (Cashback, Points, Savings)

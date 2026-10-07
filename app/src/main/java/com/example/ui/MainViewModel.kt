@@ -10,7 +10,6 @@ import com.example.data.firebase.FirestoreService
 import com.example.data.local.AppDatabase
 import com.example.data.model.FuelPrice
 import com.example.data.model.PaymentCard
-import com.example.data.model.PetrosSyncState
 import com.example.data.model.ProductItem
 import com.example.data.model.PromotionItem
 import com.example.data.model.PushNotification
@@ -59,7 +58,6 @@ data class MainUiState(
     val products: List<ProductItem> = emptyList(),
     val cartItems: Map<String, Int> = emptyMap(),
     val activeProductCategory: String = "all",
-    val petrosSyncState: PetrosSyncState = PetrosSyncState(),
     val isProcessingPayment: Boolean = false,
     val showPixSheet: Boolean = false,
     val showReceiptDialog: Boolean = false,
@@ -69,7 +67,6 @@ data class MainUiState(
     val showAddCardDialog: Boolean = false,
     val showNotificationsSheet: Boolean = false,
     val showQrScannerDialog: Boolean = false,
-    val showPetrosSyncDialog: Boolean = false,
     val showAlcoholGasCalculator: Boolean = false,
     val showBookingDialog: Boolean = false,
     val bookingServiceName: String = "Pit Stop Troca de Óleo",
@@ -309,10 +306,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setShowQrScannerDialog(show: Boolean) {
         _uiState.update { it.copy(showQrScannerDialog = show) }
-    }
-
-    fun setShowPetrosSyncDialog(show: Boolean) {
-        _uiState.update { it.copy(showPetrosSyncDialog = show) }
     }
 
     fun setShowAlcoholGasCalculator(show: Boolean) {
@@ -586,33 +579,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
             showToast("Dados limpos. Você saiu da sua conta.")
-        }
-    }
-
-    fun syncWithPetros() {
-        viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    petrosSyncState = it.petrosSyncState.copy(
-                        syncStatus = "Sincronizando com Adaptive Petros...",
-                        isConnected = true
-                    )
-                )
-            }
-            delay(1200)
-            _uiState.update {
-                it.copy(
-                    petrosSyncState = PetrosSyncState(
-                        isConnected = true,
-                        lastSyncTimestamp = System.currentTimeMillis(),
-                        serverHost = "adaptive.petros.autoposto01.com.br",
-                        pingMs = (28..49).random(),
-                        activePumpsCount = 8,
-                        syncStatus = "Sincronizado via Petros API • Tempo Real"
-                    )
-                )
-            }
-            showToast("Sincronização com o sistema Petros concluída!")
         }
     }
 

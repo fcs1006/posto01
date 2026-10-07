@@ -59,7 +59,6 @@ import com.example.ui.components.AutoPostoTopBar
 import com.example.ui.components.BookingServiceDialog
 import com.example.ui.components.GoogleSignInDialog
 import com.example.ui.components.NotificationsSheet
-import com.example.ui.components.PetrosSyncDialog
 import com.example.ui.components.PixPaymentSheet
 import com.example.ui.components.ReceiptDetailsDialog
 import com.example.ui.navigation.Screen
@@ -409,14 +408,6 @@ fun MainAppRoot(
         NotificationsSheet(
             notifications = uiState.notifications,
             onDismiss = { viewModel.setShowNotificationsSheet(false) }
-        )
-    }
-
-    if (uiState.showPetrosSyncDialog) {
-        PetrosSyncDialog(
-            syncState = uiState.petrosSyncState,
-            onForceSync = { viewModel.syncWithPetros() },
-            onDismiss = { viewModel.setShowPetrosSyncDialog(false) }
         )
     }
 

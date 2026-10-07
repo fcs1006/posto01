@@ -629,7 +629,7 @@ fun StationsMapScreen(
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "${filteredStations.size} no Firestore",
+                            text = "${filteredStations.size} postos",
                             style = MaterialTheme.typography.labelSmall,
                             color = PrimaryEmerald,
                             fontFamily = FontFamily.Monospace,
@@ -701,7 +701,7 @@ fun StationsMapScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Geolocalização precisa sincronizada via Firebase Firestore e Adaptive Petros",
+                            text = "Coordenadas precisas para sua navegação",
                             style = MaterialTheme.typography.labelSmall,
                             color = OnSurfaceVariant,
                             fontSize = 11.sp
@@ -860,7 +860,7 @@ fun StationCardItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Coordenadas GPS (Firestore):",
+                        text = "Coordenadas GPS:",
                         style = MaterialTheme.typography.labelSmall,
                         color = OnSurfaceVariant,
                         fontSize = 10.sp
@@ -1003,7 +1003,7 @@ fun StationDetailDialog(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(imageVector = Icons.Default.Place, contentDescription = null, tint = PrimaryEmerald, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = "Coordenadas Firestore:", style = MaterialTheme.typography.labelSmall, color = OnSurfaceVariant, fontSize = 11.sp)
+                            Text(text = "Coordenadas:", style = MaterialTheme.typography.labelSmall, color = OnSurfaceVariant, fontSize = 11.sp)
                         }
                         Text(
                             text = "${String.format(Locale.US, "%.5f", station.latitude)}, ${String.format(Locale.US, "%.5f", station.longitude)}",
