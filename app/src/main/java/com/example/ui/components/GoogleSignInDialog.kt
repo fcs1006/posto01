@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.res.painterResource
+import com.example.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Email
@@ -94,14 +96,14 @@ fun GoogleSignInDialog(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(PrimaryContainerEmerald.copy(alpha = 0.25f)),
+                                .background(Color.White),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.VerifiedUser,
+                                painter = painterResource(id = R.drawable.ic_google_logo),
                                 contentDescription = null,
-                                tint = PrimaryEmerald,
-                                modifier = Modifier.size(22.dp)
+                                tint = Color.Unspecified,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(10.dp))
@@ -212,11 +214,20 @@ fun GoogleSignInDialog(
                         .height(48.dp)
                         .testTag("google_confirm_button")
                 ) {
-                    Text(
-                        text = "Conectar com Google",
-                        color = OnPrimaryEmerald,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_google_logo),
+                            contentDescription = null,
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Conectar com Google",
+                            color = OnPrimaryEmerald,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

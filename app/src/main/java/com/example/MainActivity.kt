@@ -262,12 +262,12 @@ fun MainAppRoot(
                         canUseBiometrics = hasUserInDatabase,
                         onLoginSuccess = { name, cpf, email ->
                             viewModel.loginUser(name, cpf, email) {
-                                currentRoute = Screen.Home.route
+                                currentRoute = if (uiState.needsProfileCompletion) Screen.CompleteProfile.route else Screen.Home.route
                             }
                         },
                         onGoogleSignInClick = {
                             viewModel.triggerGoogleLogin(context) {
-                                currentRoute = Screen.Home.route
+                                currentRoute = if (uiState.needsProfileCompletion) Screen.CompleteProfile.route else Screen.Home.route
                             }
                         },
                         onBiometricClick = {
