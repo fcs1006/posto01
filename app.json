@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Auto Posto 01",
+    "slug": "posto01",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0B0F19"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.autoposto01.clube",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Permitir autenticação rápida no Clube 01 usando Face ID."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0F19"
+      },
+      "package": "com.autoposto01.clube"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
